@@ -32,7 +32,7 @@ export default function MasterQueue() {
   const completedTasks = filteredTasks.filter(t => t.status === 'completed');
 
   return (
-    <div style={{ paddingBottom: 100 }}>
+    <div className="page-container">
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 32, marginBottom: 8, fontWeight: 700 }}>Master Queue</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
@@ -41,20 +41,16 @@ export default function MasterQueue() {
       </div>
 
       {/* Domain Filters */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
+      <div className="filters-container">
         {domains.map(domain => (
           <button
             key={domain.id}
             onClick={() => setActiveFilter(domain.id)}
+            className="filter-button"
             style={{
-              padding: '8px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
               background: activeFilter === domain.id ? `${domain.color}20` : 'rgba(255,255,255,0.05)',
               color: activeFilter === domain.id ? domain.color : 'var(--text-secondary)',
               border: `1px solid ${activeFilter === domain.id ? domain.color : 'transparent'}`,
-              transition: 'all 0.2s',
             }}
           >
             {domain.label}
@@ -78,7 +74,7 @@ export default function MasterQueue() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
                 className="task-card"
-                style={{ padding: '16px 20px', alignItems: 'center' }}
+                style={{ alignItems: 'center' }}
               >
                 <button style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex' }}>
                   <Circle size={22} />

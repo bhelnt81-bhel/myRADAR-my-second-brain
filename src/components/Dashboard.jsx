@@ -45,17 +45,17 @@ const TaskItem = ({ task, index }) => (
 
 export default function Dashboard() {
   return (
-    <div style={{ paddingBottom: 100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+    <div className="page-container">
+      <div className="dashboard-header">
         <div>
-          <h1 style={{ fontSize: 32, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-            Good Morning, Santosh <span style={{ fontSize: 24 }}>🌅</span>
+          <h1 className="dashboard-title">
+            Good Morning, Santosh <span className="emoji-large">🌅</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+          <p className="dashboard-subtitle">
             Here is your AI-curated Daily Briefing for Tuesday.
           </p>
         </div>
-        <div className="glass-panel" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="glass-panel stats-panel">
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-bhel)' }}>8</div>
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Overdue</div>
@@ -68,7 +68,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 32 }}>
+      <div className="dashboard-grid">
         {/* Left Column: Top Tasks */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
@@ -85,7 +85,7 @@ export default function Dashboard() {
             <h2 style={{ fontSize: 18, fontWeight: 600 }}>AI Priority Matrix</h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="matrix-grid">
             {quadrants.map((q, i) => (
               <motion.div 
                 key={i}

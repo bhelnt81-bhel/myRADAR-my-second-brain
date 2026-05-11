@@ -200,3 +200,241 @@ button {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Sidebar Header Styles */
+.sidebar-header {
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.logo-title {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.logo-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.sidebar-menu-title {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-left: 16px;
+}
+
+/* Dashboard Styles */
+.page-container {
+  padding-bottom: 32px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.emoji-large {
+  font-size: 24px;
+}
+
+.stats-panel {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 32px;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Master Queue Styles */
+.filters-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+/* Mobile First Responsiveness */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    order: 2;
+    width: 100%;
+    height: 80px;
+    border-top: 1px solid var(--border-color);
+    border-right: none;
+    padding: 10px 8px;
+    background: rgba(9, 10, 15, 0.95);
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+  }
+  
+  .sidebar-header {
+    display: none;
+  }
+  
+  .sidebar-menu {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .sidebar-menu-title {
+    display: none;
+  }
+  
+  .nav-item {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    margin-bottom: 0;
+    font-size: 10px;
+    justify-content: center;
+    width: 20%;
+  }
+
+  .nav-label {
+    display: block;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
+  }
+  
+  .nav-item.active {
+    background: transparent;
+    box-shadow: none;
+    color: var(--accent-ai);
+  }
+  
+  .nav-item.active .nav-icon {
+    color: var(--accent-ai);
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+  }
+
+  .main-content {
+    order: 1;
+    padding: 20px 16px;
+    padding-bottom: 0;
+    height: calc(100vh - 80px); /* Leave room for fixed bottom nav */
+  }
+
+  .page-container {
+    padding-bottom: 100px; /* Provide space for fab */
+  }
+  
+  .fab {
+    bottom: 100px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+  }
+  
+  /* Dashboard Mobile Overrides */
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .dashboard-title {
+    font-size: 24px;
+  }
+  
+  .matrix-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Master Queue Mobile Overrides */
+  .filters-container {
+    gap: 8px;
+  }
+  
+  .filter-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .task-card {
+    padding: 12px !important;
+    gap: 12px;
+  }
+}
+

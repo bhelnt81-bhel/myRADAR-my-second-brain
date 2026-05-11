@@ -49,23 +49,18 @@ export default function App() {
     <div className="app-container">
       {/* Sidebar */}
       <nav className="sidebar">
-        <div style={{ marginBottom: 40, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ 
-            width: 40, height: 40, borderRadius: 12, 
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-          }}>
+        <div className="sidebar-header">
+          <div className="logo-icon">
             <Brain color="white" size={24} />
           </div>
           <div>
-            <h1 style={{ fontSize: 18, margin: 0, fontWeight: 700, letterSpacing: '0.02em' }}>myRADAR</h1>
-            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>Second Brain</span>
+            <h1 className="logo-title">myRADAR</h1>
+            <span className="logo-subtitle">Second Brain</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 12, paddingLeft: 16 }}>Menu</div>
+        <div className="sidebar-menu">
+          <div className="sidebar-menu-title">Menu</div>
           {navItems.map(item => {
             const Icon = item.icon;
             return (
@@ -74,8 +69,8 @@ export default function App() {
                 className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(item.id)}
               >
-                <Icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-                {item.label}
+                <Icon className="nav-icon" size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+                <span className="nav-label">{item.label}</span>
               </button>
             )
           })}
