@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, CheckSquare, Brain, FolderOpen, Settings, Plus, Mic } from 'lucide-react';
 import Dashboard from './components/Dashboard';
+import MasterQueue from './components/MasterQueue';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -97,7 +98,19 @@ export default function App() {
                 <Dashboard />
               </motion.div>
             )}
-            {activeTab !== 'dashboard' && (
+            {activeTab === 'tasks' && (
+              <motion.div
+                key="tasks"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                <MasterQueue />
+              </motion.div>
+            )}
+            {activeTab !== 'dashboard' && activeTab !== 'tasks' && (
               <motion.div
                 key="placeholder"
                 initial={{ opacity: 0, y: 10 }}
