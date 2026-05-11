@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Zap, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Clock, Zap, ArrowRight, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 
 const mockTasks = [
   { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'High', time: '45m' },
