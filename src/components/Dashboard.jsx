@@ -2,12 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Zap, ArrowRight, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 
-const mockTasks = [
-  { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'High', time: '45m' },
-  { id: 2, title: 'Finalize MSME Pitch Deck', domain: 'Intimus', domainColor: 'var(--accent-intimus)', urgency: 'High', energy: 'Medium', time: '30m' },
-  { id: 3, title: 'Complete HBS Case Study reading', domain: 'Academic', domainColor: 'var(--accent-academic)', urgency: 'Medium', energy: 'High', time: '60m' },
-];
-
 const quadrants = [
   { q: "Q1 — DO NOW", label: "Urgent & Important", bg: "rgba(239, 68, 68, 0.05)", border: "var(--accent-bhel)", tasks: ["Vendor Payment Escalation (Sehgal)", "Guest House AC Failure"] },
   { q: "Q2 — SCHEDULE", label: "Important, Not Urgent", bg: "rgba(16, 185, 129, 0.05)", border: "var(--accent-academic)", tasks: ["EMBA Marketing Block", "Intimus Website Redesign"] },
@@ -43,7 +37,9 @@ const TaskItem = ({ task, index }) => (
   </motion.div>
 );
 
-export default function Dashboard() {
+export default function Dashboard({ tasks }) {
+  const pendingTasks = tasks.filter(t => t.status !== 'completed');
+  const topTasks = pendingTasks.slice(0, 3);
   return (
     <div className="page-container">
       <div className="dashboard-header">
@@ -77,7 +73,7 @@ export default function Dashboard() {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {mockTasks.map((task, i) => <TaskItem key={task.id} task={task} index={i} />)}
+            {topTasks.map((task, i) => <TaskItem key={task.id} task={task} index={i} />)}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 40, marginBottom: 20 }}>

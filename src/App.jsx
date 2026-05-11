@@ -3,6 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, CheckSquare, Brain, FolderOpen, Settings, Plus, Mic } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import MasterQueue from './components/MasterQueue';
+import QuickCapture from './components/QuickCapture';
+
+const initialTasks = [
+  { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'High', time: '45m', status: 'pending' },
+  { id: 2, title: 'Finalize MSME Pitch Deck', domain: 'Intimus', domainColor: 'var(--accent-intimus)', urgency: 'High', energy: 'Medium', time: '30m', status: 'pending' },
+  { id: 3, title: 'Complete HBS Case Study reading', domain: 'Academic', domainColor: 'var(--accent-academic)', urgency: 'Medium', energy: 'High', time: '60m', status: 'pending' },
+  { id: 4, title: 'Vendor Payment Escalation (Sehgal)', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'Medium', time: '15m', status: 'pending' },
+  { id: 5, title: 'Review Claude API docs for Bot', domain: 'AI & Tech', domainColor: 'var(--accent-ai)', urgency: 'Low', energy: 'Low', time: '20m', status: 'pending' },
+  { id: 6, title: 'Book Himalayan Trek Guide', domain: 'Trekking', domainColor: 'var(--accent-trek)', urgency: 'Medium', energy: 'Low', time: '10m', status: 'completed' },
+];
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -34,8 +44,27 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [tasks, setTasks] = useState(initialTasks);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+
+  const handleAddTask = (newTask) => {
+    const domainColors = {
+      'BHEL': 'var(--accent-bhel)',
+      'Intimus': 'var(--accent-intimus)',
+      'Academic': 'var(--accent-academic)',
+      'Trekking': 'var(--accent-trek)',
+      'AI & Tech': 'var(--accent-ai)',
+      'Personal': '#ec4899',
+    };
+
+    setTasks([...tasks, {
+      ...newTask,
+      id: Date.now(),
+      status: 'pending',
+      domainColor: domainColors[newTask.domain] || '#94a3b8'
+    }]);
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Daily Briefing', icon: LayoutDashboard },
@@ -90,7 +119,7 @@ export default function App() {
                 transition={{ duration: 0.3 }}
                 style={{ height: '100%' }}
               >
-                <Dashboard />
+                <Dashboard tasks={tasks} />
               </motion.div>
             )}
             {activeTab === 'tasks' && (
@@ -102,7 +131,7 @@ export default function App() {
                 transition={{ duration: 0.3 }}
                 style={{ height: '100%' }}
               >
-                <MasterQueue />
+                <MasterQueue tasks={tasks} setTasks={setTasks} />
               </motion.div>
             )}
             {activeTab !== 'dashboard' && activeTab !== 'tasks' && (
@@ -131,6 +160,12 @@ export default function App() {
       >
         <Plus size={32} />
       </motion.button>
+
+      <QuickCapture 
+        isOpen={isCaptureOpen} 
+        onClose={() => setIsCaptureOpen(false)} 
+        onAdd={handleAddTask} 
+      />
     </div>
   );
 }

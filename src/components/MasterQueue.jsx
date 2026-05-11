@@ -2,16 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Zap, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 
-// Shared mock data (eventually moved to global state/context)
-const mockTasks = [
-  { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'High', time: '45m', status: 'pending' },
-  { id: 2, title: 'Finalize MSME Pitch Deck', domain: 'Intimus', domainColor: 'var(--accent-intimus)', urgency: 'High', energy: 'Medium', time: '30m', status: 'pending' },
-  { id: 3, title: 'Complete HBS Case Study reading', domain: 'Academic', domainColor: 'var(--accent-academic)', urgency: 'Medium', energy: 'High', time: '60m', status: 'pending' },
-  { id: 4, title: 'Vendor Payment Escalation (Sehgal)', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'Medium', time: '15m', status: 'pending' },
-  { id: 5, title: 'Review Claude API docs for Bot', domain: 'AI & Tech', domainColor: 'var(--accent-ai)', urgency: 'Low', energy: 'Low', time: '20m', status: 'pending' },
-  { id: 6, title: 'Book Himalayan Trek Guide', domain: 'Trekking', domainColor: 'var(--accent-trek)', urgency: 'Medium', energy: 'Low', time: '10m', status: 'completed' },
-];
-
 const domains = [
   { id: 'All', label: 'All Domains', color: 'var(--text-secondary)' },
   { id: 'BHEL', label: 'BHEL Estate', color: 'var(--accent-bhel)' },
@@ -21,12 +11,12 @@ const domains = [
   { id: 'AI & Tech', label: 'AI & Tech', color: 'var(--accent-ai)' },
 ];
 
-export default function MasterQueue() {
+export default function MasterQueue({ tasks, setTasks }) {
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filteredTasks = activeFilter === 'All' 
-    ? mockTasks 
-    : mockTasks.filter(t => t.domain === activeFilter);
+    ? tasks 
+    : tasks.filter(t => t.domain === activeFilter);
 
   const pendingTasks = filteredTasks.filter(t => t.status !== 'completed');
   const completedTasks = filteredTasks.filter(t => t.status === 'completed');
@@ -76,7 +66,15 @@ export default function MasterQueue() {
                 className="task-card"
                 style={{ alignItems: 'center' }}
               >
-                <button style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex' }}>
+                <button 
+                  style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex', cursor: 'pointer' }}
+                  onClick={() => {
+                    const updatedTasks = tasks.map(t => 
+                      t.id === task.id ? { ...t, status: 'completed' } : t
+                    );
+                    setTasks(updatedTasks);
+                  }}
+                >
                   <Circle size={22} />
                 </button>
                 
