@@ -10,6 +10,8 @@ const initialSettings = {
   telegramChatId: '',
   workHourStart: '09:00',
   workHourEnd: '18:00',
+  fontSize: 'Medium',
+  fontStyle: 'Modern Sans',
 };
 
 export default function SettingsTab() {
@@ -24,6 +26,10 @@ export default function SettingsTab() {
     e.preventDefault();
     localStorage.setItem('myradar_settings', JSON.stringify(settings));
     setSavedMessage(true);
+    
+    // Dispatch a custom event to notify App.jsx of settings update in real-time
+    window.dispatchEvent(new Event('myradar-settings-changed'));
+    
     setTimeout(() => setSavedMessage(false), 2000);
   };
 
@@ -144,6 +150,40 @@ export default function SettingsTab() {
                 onChange={e => handleChange('workHourEnd', e.target.value)}
                 style={inputStyle}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Display & Typography */}
+        <div className="glass-panel" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <Settings color="var(--accent-ai)" size={20} />
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Display & Typography</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Font Size</label>
+              <select
+                value={settings.fontSize || 'Medium'}
+                onChange={e => handleChange('fontSize', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="Standard">Standard (Slightly Smaller)</option>
+                <option value="Medium">Medium (Recommended)</option>
+                <option value="Large">Large (High Readability)</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Font Style / Family</label>
+              <select
+                value={settings.fontStyle || 'Modern Sans'}
+                onChange={e => handleChange('fontStyle', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="Modern Sans">Modern Sans (Inter)</option>
+                <option value="Classic Serif">Classic Serif (Georgia)</option>
+                <option value="High Contrast Slab">High Contrast Slab (Outfit)</option>
+              </select>
             </div>
           </div>
         </div>

@@ -44,12 +44,36 @@ export default function App() {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [typography, setTypography] = useState(() => {
+    const saved = localStorage.getItem('myradar_settings');
+    const settings = saved ? JSON.parse(saved) : {};
+    return {
+      fontSize: settings.fontSize || 'Medium',
+      fontStyle: settings.fontStyle || 'Modern Sans'
+    };
+  });
+
   useEffect(() => {
     db.getTasks().then(data => {
       setTasks(data);
       setLoading(false);
     });
+
+    const handleSettingsChange = () => {
+      const saved = localStorage.getItem('myradar_settings');
+      const settings = saved ? JSON.parse(saved) : {};
+      setTypography({
+        fontSize: settings.fontSize || 'Medium',
+        fontStyle: settings.fontStyle || 'Modern Sans'
+      });
+    };
+
+    window.addEventListener('myradar-settings-changed', handleSettingsChange);
+    return () => window.removeEventListener('myradar-settings-changed', handleSettingsChange);
   }, []);
+
+  const fontSizeClass = `font-size-${typography.fontSize.toLowerCase()}`;
+  const fontStyleClass = `font-style-${typography.fontStyle.toLowerCase().replace(/\s+/g, '-')}`;
 
   const handleAddTask = async (newTask) => {
     const domainColors = {
@@ -79,7 +103,7 @@ export default function App() {
   ];
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${fontSizeClass} ${fontStyleClass}`}>
       {/* Sidebar */}
       <nav className="sidebar">
         <div className="sidebar-header">

@@ -19,6 +19,45 @@
   --glass-bg: rgba(15, 17, 26, 0.65);
   --glass-border: 1px solid rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  /* Font Options */
+  --font-scale: 1.1; /* Made default slightly larger for better readability */
+}
+
+/* Font Size Scales */
+.font-size-standard {
+  --font-scale: 1.0 !important;
+}
+.font-size-medium {
+  --font-scale: 1.18 !important;
+}
+.font-size-large {
+  --font-scale: 1.35 !important;
+}
+
+/* Font Family Styles */
+.font-style-modern-sans, 
+.font-style-modern-sans h1, .font-style-modern-sans h2, .font-style-modern-sans h3, 
+.font-style-modern-sans p, .font-style-modern-sans span, .font-style-modern-sans label,
+.font-style-modern-sans input, .font-style-modern-sans select, .font-style-modern-sans textarea,
+.font-style-modern-sans button, .font-style-modern-sans pre {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.font-style-classic-serif,
+.font-style-classic-serif h1, .font-style-classic-serif h2, .font-style-classic-serif h3, 
+.font-style-classic-serif p, .font-style-classic-serif span, .font-style-classic-serif label,
+.font-style-classic-serif input, .font-style-classic-serif select, .font-style-classic-serif textarea,
+.font-style-classic-serif button, .font-style-classic-serif pre {
+  font-family: 'Georgia', serif !important;
+}
+
+.font-style-high-contrast-slab,
+.font-style-high-contrast-slab h1, .font-style-high-contrast-slab h2, .font-style-high-contrast-slab h3, 
+.font-style-high-contrast-slab p, .font-style-high-contrast-slab span, .font-style-high-contrast-slab label,
+.font-style-high-contrast-slab input, .font-style-high-contrast-slab select, .font-style-high-contrast-slab textarea,
+.font-style-high-contrast-slab button, .font-style-high-contrast-slab pre {
+  font-family: 'Outfit', sans-serif !important;
 }
 
 * {
@@ -39,11 +78,32 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  font-size: calc(14px * var(--font-scale)) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Outfit', sans-serif;
   letter-spacing: -0.02em;
+}
+
+/* Dynamic Font Overrides */
+.dashboard-title, .page-container h1 {
+  font-size: calc(32px * var(--font-scale)) !important;
+}
+.dashboard-subtitle, .page-container p, .glass-panel p, ul li, pre {
+  font-size: calc(14px * var(--font-scale)) !important;
+}
+.glass-panel h2, .page-container h2, .dashboard-grid h2 {
+  font-size: calc(18px * var(--font-scale)) !important;
+}
+.task-card h3, .glass-panel h3, .dashboard-grid h3 {
+  font-size: calc(15px * var(--font-scale)) !important;
+}
+label, .domain-pill, span, .nav-label {
+  font-size: calc(12px * var(--font-scale)) !important;
+}
+input, select, textarea, button {
+  font-size: calc(14px * var(--font-scale)) !important;
 }
 
 button {
