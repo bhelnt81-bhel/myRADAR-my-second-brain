@@ -1,18 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, CheckSquare, Brain, FolderOpen, Settings, Plus, Mic } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import MasterQueue from './components/MasterQueue';
 import QuickCapture from './components/QuickCapture';
-
-const initialTasks = [
-  { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'High', time: '45m', status: 'pending' },
-  { id: 2, title: 'Finalize MSME Pitch Deck', domain: 'Intimus', domainColor: 'var(--accent-intimus)', urgency: 'High', energy: 'Medium', time: '30m', status: 'pending' },
-  { id: 3, title: 'Complete HBS Case Study reading', domain: 'Academic', domainColor: 'var(--accent-academic)', urgency: 'Medium', energy: 'High', time: '60m', status: 'pending' },
-  { id: 4, title: 'Vendor Payment Escalation (Sehgal)', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', energy: 'Medium', time: '15m', status: 'pending' },
-  { id: 5, title: 'Review Claude API docs for Bot', domain: 'AI & Tech', domainColor: 'var(--accent-ai)', urgency: 'Low', energy: 'Low', time: '20m', status: 'pending' },
-  { id: 6, title: 'Book Himalayan Trek Guide', domain: 'Trekking', domainColor: 'var(--accent-trek)', urgency: 'Medium', energy: 'Low', time: '10m', status: 'completed' },
-];
+import KnowledgeBase from './components/KnowledgeBase';
+import { db } from './services/db';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -44,11 +37,19 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddTask = (newTask) => {
+  useEffect(() => {
+    db.getTasks().then(data => {
+      setTasks(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleAddTask = async (newTask) => {
     const domainColors = {
       'BHEL': 'var(--accent-bhel)',
       'Intimus': 'var(--accent-intimus)',
@@ -58,12 +59,13 @@ export default function App() {
       'Personal': '#ec4899',
     };
 
-    setTasks([...tasks, {
+    const taskWithColor = {
       ...newTask,
-      id: Date.now(),
-      status: 'pending',
       domainColor: domainColors[newTask.domain] || '#94a3b8'
-    }]);
+    };
+
+    const addedTask = await db.addTask(taskWithColor);
+    setTasks([...tasks, addedTask]);
   };
 
   const navItems = [
@@ -109,7 +111,14 @@ export default function App() {
       {/* Main Content Area */}
       <main className="main-content">
         <ErrorBoundary>
-          <AnimatePresence mode="wait">
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                <Brain size={32} color="var(--text-tertiary)" />
+              </motion.div>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div
                 key="dashboard"
@@ -134,7 +143,19 @@ export default function App() {
                 <MasterQueue tasks={tasks} setTasks={setTasks} />
               </motion.div>
             )}
-            {activeTab !== 'dashboard' && activeTab !== 'tasks' && (
+            {activeTab === 'knowledge' && (
+              <motion.div
+                key="knowledge"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                <KnowledgeBase />
+              </motion.div>
+            )}
+            {activeTab !== 'dashboard' && activeTab !== 'tasks' && activeTab !== 'knowledge' && (
               <motion.div
                 key="placeholder"
                 initial={{ opacity: 0, y: 10 }}
@@ -149,6 +170,7 @@ export default function App() {
               </motion.div>
             )}
           </AnimatePresence>
+          )}
         </ErrorBoundary>
       </main>
 

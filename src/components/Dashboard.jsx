@@ -2,12 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Zap, ArrowRight, TrendingUp, AlertTriangle, Brain } from 'lucide-react';
 
-const quadrants = [
-  { q: "Q1 — DO NOW", label: "Urgent & Important", bg: "rgba(239, 68, 68, 0.05)", border: "var(--accent-bhel)", tasks: ["Vendor Payment Escalation (Sehgal)", "Guest House AC Failure"] },
-  { q: "Q2 — SCHEDULE", label: "Important, Not Urgent", bg: "rgba(16, 185, 129, 0.05)", border: "var(--accent-academic)", tasks: ["EMBA Marketing Block", "Intimus Website Redesign"] },
-  { q: "Q3 — DELEGATE", label: "Urgent, Not Important", bg: "rgba(249, 115, 22, 0.05)", border: "var(--accent-intimus)", tasks: ["Routine Form Submission", "Draft standard circular"] },
-  { q: "Q4 — ELIMINATE", label: "Not Urgent/Important", bg: "rgba(100, 116, 139, 0.05)", border: "var(--text-tertiary)", tasks: ["Low-value meetings", "Endless scrolling"] },
-];
+// Quadrants will be dynamically generated based on tasks
 
 const TaskItem = ({ task, index }) => (
   <motion.div 
@@ -39,7 +34,31 @@ const TaskItem = ({ task, index }) => (
 
 export default function Dashboard({ tasks }) {
   const pendingTasks = tasks.filter(t => t.status !== 'completed');
-  const topTasks = pendingTasks.slice(0, 3);
+
+  // Priority Calculation
+  const calculateScore = (task) => {
+    const mapVal = (v) => v === 'High' ? 3 : v === 'Medium' ? 2 : 1;
+    let score = (mapVal(task.urgency) * 0.35) + (mapVal(task.importance || 'Medium') * 0.30);
+    if (task.domain === 'BHEL') score *= 1.5;
+    return score;
+  };
+
+  const sortedTasks = [...pendingTasks].sort((a, b) => calculateScore(b) - calculateScore(a));
+  const topTasks = sortedTasks.slice(0, 3);
+
+  // Dynamic Eisenhower Matrix
+  const q1 = pendingTasks.filter(t => t.urgency === 'High' && (t.importance === 'High' || t.importance === undefined));
+  const q2 = pendingTasks.filter(t => t.urgency !== 'High' && (t.importance === 'High' || t.importance === undefined));
+  const q3 = pendingTasks.filter(t => t.urgency === 'High' && t.importance !== 'High' && t.importance !== undefined);
+  const q4 = pendingTasks.filter(t => t.urgency !== 'High' && t.importance !== 'High' && t.importance !== undefined);
+
+  const quadrants = [
+    { q: "Q1 — DO NOW", label: "Urgent & Important", bg: "rgba(239, 68, 68, 0.05)", border: "var(--accent-bhel)", tasks: q1.length > 0 ? q1.map(t => t.title) : ["No urgent tasks"] },
+    { q: "Q2 — SCHEDULE", label: "Important, Not Urgent", bg: "rgba(16, 185, 129, 0.05)", border: "var(--accent-academic)", tasks: q2.length > 0 ? q2.map(t => t.title) : ["No scheduled tasks"] },
+    { q: "Q3 — DELEGATE", label: "Urgent, Not Important", bg: "rgba(249, 115, 22, 0.05)", border: "var(--accent-intimus)", tasks: q3.length > 0 ? q3.map(t => t.title) : ["Nothing to delegate"] },
+    { q: "Q4 — ELIMINATE", label: "Not Urgent/Important", bg: "rgba(100, 116, 139, 0.05)", border: "var(--text-tertiary)", tasks: q4.length > 0 ? q4.map(t => t.title) : ["Clear inbox"] },
+  ];
+
   return (
     <div className="page-container">
       <div className="dashboard-header">

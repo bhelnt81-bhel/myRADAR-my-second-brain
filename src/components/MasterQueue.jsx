@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Zap, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { db } from '../services/db';
 
 const domains = [
   { id: 'All', label: 'All Domains', color: 'var(--text-secondary)' },
@@ -12,7 +13,12 @@ const domains = [
 ];
 
 export default function MasterQueue({ tasks, setTasks }) {
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const hour = new Date().getHours();
+    // Context Switcher: 9 AM to 6 PM defaults to BHEL, otherwise Academic
+    if (hour >= 9 && hour < 18) return 'BHEL';
+    return 'Academic';
+  });
 
   const filteredTasks = activeFilter === 'All' 
     ? tasks 
@@ -67,11 +73,9 @@ export default function MasterQueue({ tasks, setTasks }) {
                 style={{ alignItems: 'center' }}
               >
                 <button 
-                  style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex', cursor: 'pointer' }}
-                  onClick={() => {
-                    const updatedTasks = tasks.map(t => 
-                      t.id === task.id ? { ...t, status: 'completed' } : t
-                    );
+                  style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex', cursor: 'pointer', border: 'none', background: 'transparent' }}
+                  onClick={async () => {
+                    const updatedTasks = await db.updateTaskStatus(task.id, 'completed');
                     setTasks(updatedTasks);
                   }}
                 >
