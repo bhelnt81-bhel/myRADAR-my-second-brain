@@ -5,6 +5,8 @@ import Dashboard from './components/Dashboard';
 import MasterQueue from './components/MasterQueue';
 import QuickCapture from './components/QuickCapture';
 import KnowledgeBase from './components/KnowledgeBase';
+import AIPriorities from './components/AIPriorities';
+import SettingsTab from './components/SettingsTab';
 import { db } from './services/db';
 
 class ErrorBoundary extends React.Component {
@@ -155,7 +157,31 @@ export default function App() {
                 <KnowledgeBase />
               </motion.div>
             )}
-            {activeTab !== 'dashboard' && activeTab !== 'tasks' && activeTab !== 'knowledge' && (
+            {activeTab === 'brain' && (
+              <motion.div
+                key="brain"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                <AIPriorities tasks={tasks} />
+              </motion.div>
+            )}
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                <SettingsTab />
+              </motion.div>
+            )}
+            {activeTab !== 'dashboard' && activeTab !== 'tasks' && activeTab !== 'knowledge' && activeTab !== 'brain' && activeTab !== 'settings' && (
               <motion.div
                 key="placeholder"
                 initial={{ opacity: 0, y: 10 }}
