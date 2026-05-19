@@ -1,0 +1,190 @@
+// Gemini AI Priority Engine integration
+
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+
+function getApiKey() {
+  try {
+    const saved = localStorage.getItem('myradar_settings');
+    if (saved) {
+      const settings = JSON.parse(saved);
+      return settings.geminiApiKey || null;
+    }
+  } catch (e) {
+    console.error("Error reading geminiApiKey from settings", e);
+  }
+  return null;
+}
+
+export const ai = {
+  hasKey: () => {
+    return !!getApiKey();
+  },
+
+  testConnection: async (apiKey) => {
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: "Respond with the word 'Success' if you can read this." }] }]
+        })
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      return text.toLowerCase().includes("success");
+    } catch (e) {
+      console.error("API Connection test failed", e);
+      return false;
+    }
+  },
+
+  prioritizeTasks: async (tasks, settings, energyLevel) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured. Please add it in Settings.");
+    }
+
+    const goals = JSON.parse(localStorage.getItem('myradar_goals') || '{}');
+
+    const systemPrompt = `You are the AI Priority Engine for 'myRADAR', the personal Second Brain system of Santosh Kumar, Deputy Engineer (Estate) at BHEL Noida, founder of Intimus Enterprises LLP (MSME Web Development), student preparing for IIT Delhi EMBA, Himalayan trekker, and AI learner.
+
+Your goal is to evaluate, score, and categorize the given list of tasks based on context, goals, and current energy.
+
+User Context:
+- Name: Santosh Kumar (Address him as 'Santosh' or 'Sir').
+- Current Role: Deputy Engineer (Estate), BHEL Noida. BHEL tasks must be heavily prioritized, especially during work hours, due to PSU compliance, vendor/financial deadlines, and DGM/AGM hierarchies.
+- Secondary Role: Founder of Intimus Enterprises LLP. Focused on MSME clients, website building (React/HTML), hostings.
+- Academic: Studying for IIT Delhi EMBA, case studies, assignments.
+- Personal: Trekking prep (Himalayan treks), daily workout.
+- Energy Level right now: ${energyLevel || 'Medium'}.
+- Office Working Hours: ${settings.workHourStart || '09:00'} to ${settings.workHourEnd || '18:00'}. (Note: If current time is during work hours, prioritize BHEL tasks. Post-6PM, study and Intimus tasks should surface).
+
+Current Goals:
+- BHEL: ${goals.BHEL || 'Complete disposal of 56 unserviceable AC units'}
+- Intimus: ${goals.Intimus || 'Acquire 3 new MSME clients in NCR'}
+- Academic: ${goals.Academic || 'Solve 10 marketing case studies for EMBA prep'}
+- Trekking: ${goals.Trekking || 'Walk 10,000 steps daily for altitude training'}
+- AI & Tech: ${goals['AI & Tech'] || 'Build and deploy myRADAR Phase 2'}
+
+Active Tasks:
+${JSON.stringify(tasks.map(t => ({ id: t.id, title: t.title, domain: t.domain, urgency: t.urgency, energy: t.energy, time: t.time, status: t.status, deadlineDays: t.deadlineDays || 7 })), null, 2)}
+
+Instructions for each task:
+1. Re-evaluate urgency ('High', 'Medium', 'Low') and importance ('High', 'Medium', 'Low').
+2. Calculate a priority score (1.0 to 10.0). Formula: (UrgencyScore * 0.35) + (ImportanceScore * 0.30) + (DeadlineProximityScore * 0.20) + (GoalAlignmentScore * 0.15).
+   - High = 10, Medium = 6, Low = 2.
+   - DeadlineProximity = 10 if deadlineDays <= 2, 6 if <= 7, 2 if > 7.
+   - GoalAlignment = 10 if it directly moves the active domain goal forward, 3 otherwise.
+   - If the task is BHEL domain, multiply final score by 1.5 (cap at 10.0).
+3. Assign an Eisenhower quadrant:
+   - "Q1 — DO NOW" (Urgent & Important)
+   - "Q2 — SCHEDULE" (Important, Not Urgent)
+   - "Q3 — DELEGATE" (Urgent, Not Important)
+   - "Q4 — ELIMINATE" (Not Urgent/Important)
+4. Create a "microAction" (a 5-minute easy step to break procrastination).
+5. Suggest a "timeBlockSuggestion" based on current energy and domain.
+
+Generate a single paragraph "insight" (2-3 sentences) summarizing today's focus strategy matching the user's energy level.
+Identify the "top3Ids" in order of execution.`;
+
+    const requestBody = {
+      contents: [{ parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            tasks: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  id: { type: "INTEGER" },
+                  urgency: { type: "STRING", enum: ["High", "Medium", "Low"] },
+                  importance: { type: "STRING", enum: ["High", "Medium", "Low"] },
+                  priorityScore: { type: "NUMBER" },
+                  quadrant: { type: "STRING", enum: ["Q1 — DO NOW", "Q2 — SCHEDULE", "Q3 — DELEGATE", "Q4 — ELIMINATE"] },
+                  microAction: { type: "STRING" },
+                  timeBlockSuggestion: { type: "STRING" }
+                },
+                required: ["id", "urgency", "importance", "priorityScore", "quadrant", "microAction", "timeBlockSuggestion"]
+              }
+            },
+            insight: { type: "STRING" },
+            top3Ids: {
+              type: "ARRAY",
+              items: { type: "INTEGER" }
+            }
+          },
+          required: ["tasks", "insight", "top3Ids"]
+        }
+      }
+    };
+
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: Status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return JSON.parse(rawText);
+    } catch (e) {
+      console.error("Failed to prioritize tasks using Gemini API", e);
+      throw e;
+    }
+  },
+
+  askAIChat: async (query, tasks, settings, energyLevel) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured.");
+    }
+
+    const goals = JSON.parse(localStorage.getItem('myradar_goals') || '{}');
+
+    const prompt = `You are the AI Chief of Staff/Second Brain for Santosh Kumar, Deputy Engineer (Estate) at BHEL Noida.
+You are helping him decide what to do next based on his workload, current energy level, and local context.
+
+User Profile:
+- Role: Deputy Engineer (Estate) at BHEL (handles AC Fleet, vendor Sehgal, guest houses, admin drafts).
+- Secondary: Founder of Intimus Enterprises (web development).
+- Academic: IIT Delhi EMBA student.
+- Energy: ${energyLevel || 'Medium'}
+- Goals: ${JSON.stringify(goals)}
+
+Active Pending Tasks:
+${JSON.stringify(tasks.filter(t => t.status !== 'completed').map(t => ({ id: t.id, title: t.title, domain: t.domain, urgency: t.urgency, priorityScore: t.priorityScore, quadrant: t.quadrant, time: t.time })), null, 2)}
+
+User Question: "${query}"
+
+Provide a concise, encouraging, and highly specific answer (2-4 sentences max). Give direct recommendations on which exact task to select and what first micro-step to take. Speak in a helpful corporate/chief-of-staff tone.`;
+
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to consult AI");
+      }
+
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to consult your tasks. Please check your network connection.";
+    } catch (e) {
+      console.error("AI Chat consulting failed", e);
+      return "Error: Unable to connect to Gemini API. Please verify your API Key and internet connection.";
+    }
+  }
+};

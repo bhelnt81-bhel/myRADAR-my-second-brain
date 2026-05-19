@@ -1,6 +1,4 @@
-// Mock database service using LocalStorage for Phase 1 persistence.
-// This simulates the async calls we will eventually make to the Google Sheets backend.
-
+// Database service supporting Phase 1 LocalStorage persistence and Google Sheets synchronization.
 const DB_KEY = 'myradar_tasks';
 
 const initialTasks = [
@@ -12,48 +10,129 @@ const initialTasks = [
   { id: 6, title: 'Book Himalayan Trek Guide', domain: 'Trekking', domainColor: 'var(--accent-trek)', urgency: 'Medium', importance: 'High', energy: 'Low', time: '10m', status: 'completed', deadlineDays: 45 },
 ];
 
+const domainColors = {
+  'BHEL': 'var(--accent-bhel)',
+  'Intimus': 'var(--accent-intimus)',
+  'Academic': 'var(--accent-academic)',
+  'Trekking': 'var(--accent-trek)',
+  'AI & Tech': 'var(--accent-ai)',
+  'Personal': '#ec4899',
+};
+
+function getSheetUrl() {
+  try {
+    const saved = localStorage.getItem('myradar_settings');
+    if (saved) {
+      const settings = JSON.parse(saved);
+      return settings.sheetUrl || null;
+    }
+  } catch (e) {
+    console.error("Error reading settings for sheetUrl", e);
+  }
+  return null;
+}
+
 export const db = {
   getTasks: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stored = localStorage.getItem(DB_KEY);
-        if (stored) {
-          resolve(JSON.parse(stored));
-        } else {
-          localStorage.setItem(DB_KEY, JSON.stringify(initialTasks));
-          resolve(initialTasks);
+    // Return a promise with a slight timeout to simulate network delay for local,
+    // or run direct fetch if sheetUrl is configured.
+    const localData = localStorage.getItem(DB_KEY);
+    const tasks = localData ? JSON.parse(localData) : initialTasks;
+    if (!localData) {
+      localStorage.setItem(DB_KEY, JSON.stringify(initialTasks));
+    }
+
+    const sheetUrl = getSheetUrl();
+    if (sheetUrl) {
+      try {
+        const response = await fetch(sheetUrl);
+        if (response.ok) {
+          const remoteTasks = await response.json();
+          if (Array.isArray(remoteTasks)) {
+            // Apply domain colors
+            const formattedTasks = remoteTasks.map(t => ({
+              ...t,
+              domainColor: domainColors[t.domain] || '#94a3b8'
+            }));
+            localStorage.setItem(DB_KEY, JSON.stringify(formattedTasks));
+            return formattedTasks;
+          }
         }
-      }, 300); // simulate network delay
+      } catch (err) {
+        console.warn("Failed to fetch from Google Sheets, using cached tasks", err);
+      }
+    }
+
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(tasks), 100);
     });
   },
 
   addTask: async (task) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stored = localStorage.getItem(DB_KEY);
-        const tasks = stored ? JSON.parse(stored) : [];
-        const newTask = {
-          ...task,
-          id: Date.now(),
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        };
-        tasks.push(newTask);
-        localStorage.setItem(DB_KEY, JSON.stringify(tasks));
-        resolve(newTask);
-      }, 300);
-    });
+    const stored = localStorage.getItem(DB_KEY);
+    const tasks = stored ? JSON.parse(stored) : [];
+    
+    const newTask = {
+      ...task,
+      id: Date.now(),
+      status: 'pending',
+      domainColor: domainColors[task.domain] || '#94a3b8',
+      createdAt: new Date().toISOString()
+    };
+    
+    tasks.push(newTask);
+    localStorage.setItem(DB_KEY, JSON.stringify(tasks));
+
+    const sheetUrl = getSheetUrl();
+    if (sheetUrl) {
+      try {
+        // Send as text/plain to avoid CORS preflight OPTIONS pre-request
+        await fetch(sheetUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify({
+            action: 'addTask',
+            task: newTask
+          })
+        });
+      } catch (err) {
+        console.warn("Failed to push new task to Google Sheets, saved locally", err);
+      }
+    }
+
+    return newTask;
   },
 
   updateTaskStatus: async (taskId, status) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const stored = localStorage.getItem(DB_KEY);
-        const tasks = stored ? JSON.parse(stored) : [];
-        const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status } : t);
-        localStorage.setItem(DB_KEY, JSON.stringify(updatedTasks));
-        resolve(updatedTasks);
-      }, 300);
-    });
+    const stored = localStorage.getItem(DB_KEY);
+    const tasks = stored ? JSON.parse(stored) : [];
+    const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status } : t);
+    localStorage.setItem(DB_KEY, JSON.stringify(updatedTasks));
+
+    const sheetUrl = getSheetUrl();
+    if (sheetUrl) {
+      try {
+        await fetch(sheetUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify({
+            action: 'updateTaskStatus',
+            id: taskId,
+            status: status
+          })
+        });
+      } catch (err) {
+        console.warn("Failed to update task status in Google Sheets, updated locally", err);
+      }
+    }
+
+    return updatedTasks;
   }
 };
+

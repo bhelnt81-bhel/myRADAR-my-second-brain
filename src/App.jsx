@@ -8,6 +8,7 @@ import KnowledgeBase from './components/KnowledgeBase';
 import AIPriorities from './components/AIPriorities';
 import SettingsTab from './components/SettingsTab';
 import { db } from './services/db';
+import { ai } from './services/ai';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -44,6 +45,12 @@ export default function App() {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Phase 2 State
+  const [energyLevel, setEnergyLevel] = useState(null);
+  const [aiInsight, setAiInsight] = useState('');
+  const [top3Ids, setTop3Ids] = useState([]);
+  const [isPrioritizing, setIsPrioritizing] = useState(false);
+
   const [typography, setTypography] = useState(() => {
     const saved = localStorage.getItem('myradar_settings');
     const settings = saved ? JSON.parse(saved) : {};
@@ -53,10 +60,127 @@ export default function App() {
     };
   });
 
+  const runAIPrioritization = async (tasksList, energy) => {
+    const savedSettings = localStorage.getItem('myradar_settings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : {};
+    
+    if (!settings.geminiApiKey) {
+      // Fallback to local heuristic priorities
+      const fallbackPrioritized = tasksList.map(task => {
+        const mapVal = (v) => v === 'High' ? 3 : v === 'Medium' ? 2 : 1;
+        let score = (mapVal(task.urgency) * 0.35) + (mapVal(task.importance || 'Medium') * 0.30);
+        if (task.domain === 'BHEL') score *= 1.5;
+        
+        let q = "Q4 — ELIMINATE";
+        if (task.urgency === 'High' && (task.importance === 'High' || !task.importance)) q = "Q1 — DO NOW";
+        else if (task.urgency !== 'High' && (task.importance === 'High' || !task.importance)) q = "Q2 — SCHEDULE";
+        else if (task.urgency === 'High' && task.importance !== 'High') q = "Q3 — DELEGATE";
+        
+        return {
+          ...task,
+          priorityScore: Number(Math.min(10, score * 2.2).toFixed(1)),
+          quadrant: q,
+          microAction: `Spend 5 minutes drafting the outline / setting environment for: ${task.title}`,
+          timeBlockSuggestion: task.urgency === 'High' ? 'Morning Focus Block' : 'Afternoon Review'
+        };
+      });
+
+      setTasks(fallbackPrioritized);
+      setAiInsight("Welcome back, Santosh! Please enter your Gemini API Key in Settings to unlock real-time contextual priorities, proactive daily briefings, and procrastination micro-actions.");
+      const sortedIds = [...fallbackPrioritized]
+        .filter(t => t.status !== 'completed')
+        .sort((a,b) => b.priorityScore - a.priorityScore)
+        .slice(0, 3)
+        .map(t => t.id);
+      setTop3Ids(sortedIds);
+      return;
+    }
+
+    setIsPrioritizing(true);
+    try {
+      const result = await ai.prioritizeTasks(tasksList, settings, energy);
+      if (result && result.tasks) {
+        const updated = tasksList.map(task => {
+          const aiTask = result.tasks.find(t => Number(t.id) === Number(task.id));
+          if (aiTask) {
+            return {
+              ...task,
+              urgency: aiTask.urgency,
+              importance: aiTask.importance,
+              priorityScore: aiTask.priorityScore,
+              quadrant: aiTask.quadrant,
+              microAction: aiTask.microAction,
+              timeBlockSuggestion: aiTask.timeBlockSuggestion
+            };
+          }
+          return task;
+        });
+
+        setTasks(updated);
+        setAiInsight(result.insight || '');
+        setTop3Ids(result.top3Ids || []);
+
+        localStorage.setItem('myradar_prioritized_state', JSON.stringify({
+          tasks: updated,
+          insight: result.insight,
+          top3Ids: result.top3Ids
+        }));
+      }
+    } catch (e) {
+      console.error("AI Prioritization failed", e);
+    } finally {
+      setIsPrioritizing(false);
+    }
+  };
+
+  const handleCheckIn = async (energy) => {
+    setEnergyLevel(energy);
+    localStorage.setItem('myradar_energy_level', energy);
+    localStorage.setItem('myradar_last_checkin_date', new Date().toDateString());
+    await runAIPrioritization(tasks, energy);
+  };
+
   useEffect(() => {
+    const lastCheckin = localStorage.getItem('myradar_last_checkin_date');
+    const today = new Date().toDateString();
+    const savedEnergy = localStorage.getItem('myradar_energy_level');
+    
+    let currentEnergy = null;
+    if (lastCheckin === today && savedEnergy) {
+      currentEnergy = savedEnergy;
+      setEnergyLevel(savedEnergy);
+    }
+
     db.getTasks().then(data => {
+      const cachedState = localStorage.getItem('myradar_prioritized_state');
+      if (cachedState) {
+        try {
+          const parsed = JSON.parse(cachedState);
+          const syncedTasks = data.map(dbTask => {
+            const cachedTask = parsed.tasks.find(t => t.id === dbTask.id);
+            if (cachedTask) {
+              return {
+                ...cachedTask,
+                status: dbTask.status
+              };
+            }
+            return dbTask;
+          });
+          setTasks(syncedTasks);
+          setAiInsight(parsed.insight || '');
+          setTop3Ids(parsed.top3Ids || []);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error("Failed parsing cached AI priorities", e);
+        }
+      }
+
       setTasks(data);
       setLoading(false);
+      if (currentEnergy) {
+        runAIPrioritization(data, currentEnergy);
+      }
     });
 
     const handleSettingsChange = () => {
@@ -76,23 +200,37 @@ export default function App() {
   const fontStyleClass = `font-style-${typography.fontStyle.toLowerCase().replace(/\s+/g, '-')}`;
 
   const handleAddTask = async (newTask) => {
-    const domainColors = {
-      'BHEL': 'var(--accent-bhel)',
-      'Intimus': 'var(--accent-intimus)',
-      'Academic': 'var(--accent-academic)',
-      'Trekking': 'var(--accent-trek)',
-      'AI & Tech': 'var(--accent-ai)',
-      'Personal': '#ec4899',
-    };
-
-    const taskWithColor = {
-      ...newTask,
-      domainColor: domainColors[newTask.domain] || '#94a3b8'
-    };
-
-    const addedTask = await db.addTask(taskWithColor);
-    setTasks([...tasks, addedTask]);
+    const addedTask = await db.addTask(newTask);
+    const updatedTasks = [...tasks, addedTask];
+    setTasks(updatedTasks);
+    if (energyLevel) {
+      runAIPrioritization(updatedTasks, energyLevel);
+    }
   };
+
+  const handleUpdateTasks = (updatedTasks) => {
+    setTasks(updatedTasks);
+    const cachedState = localStorage.getItem('myradar_prioritized_state');
+    if (cachedState) {
+      try {
+        const parsed = JSON.parse(cachedState);
+        parsed.tasks = parsed.tasks.map(cachedTask => {
+          const matchingDbTask = updatedTasks.find(t => t.id === cachedTask.id);
+          if (matchingDbTask) {
+            return {
+              ...cachedTask,
+              status: matchingDbTask.status
+            };
+          }
+          return cachedTask;
+        });
+        localStorage.setItem('myradar_prioritized_state', JSON.stringify(parsed));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
 
   const navItems = [
     { id: 'dashboard', label: 'Daily Briefing', icon: LayoutDashboard },
@@ -154,7 +292,15 @@ export default function App() {
                 transition={{ duration: 0.3 }}
                 style={{ height: '100%' }}
               >
-                <Dashboard tasks={tasks} />
+                <Dashboard 
+                  tasks={tasks} 
+                  energyLevel={energyLevel}
+                  aiInsight={aiInsight}
+                  top3Ids={top3Ids}
+                  isPrioritizing={isPrioritizing}
+                  onCheckIn={handleCheckIn}
+                  onRecalculate={() => runAIPrioritization(tasks, energyLevel)}
+                />
               </motion.div>
             )}
             {activeTab === 'tasks' && (
@@ -166,7 +312,7 @@ export default function App() {
                 transition={{ duration: 0.3 }}
                 style={{ height: '100%' }}
               >
-                <MasterQueue tasks={tasks} setTasks={setTasks} />
+                <MasterQueue tasks={tasks} setTasks={handleUpdateTasks} />
               </motion.div>
             )}
             {activeTab === 'knowledge' && (
@@ -190,7 +336,7 @@ export default function App() {
                 transition={{ duration: 0.3 }}
                 style={{ height: '100%' }}
               >
-                <AIPriorities tasks={tasks} />
+                <AIPriorities tasks={tasks} energyLevel={energyLevel} />
               </motion.div>
             )}
             {activeTab === 'settings' && (

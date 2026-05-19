@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, Database, Send, Clock, User } from 'lucide-react';
+import { Settings, Save, Database, Send, Clock, User, Brain, Key, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { ai } from '../services/ai';
 
 const initialSettings = {
   userName: 'Santosh Kumar',
   userRole: 'Deputy Engineer (Estate)',
   sheetUrl: '',
+  geminiApiKey: '',
   telegramToken: '',
   telegramChatId: '',
   workHourStart: '09:00',
@@ -21,6 +23,8 @@ export default function SettingsTab() {
   });
 
   const [savedMessage, setSavedMessage] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null); // 'success' | 'fail' | null
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -35,6 +39,18 @@ export default function SettingsTab() {
 
   const handleChange = (key, value) => {
     setSettings({ ...settings, [key]: value });
+  };
+
+  const handleTestConnection = async () => {
+    if (!settings.geminiApiKey) {
+      alert("Please enter a Gemini API Key first.");
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    const success = await ai.testConnection(settings.geminiApiKey);
+    setTesting(false);
+    setTestResult(success ? 'success' : 'fail');
   };
 
   return (
@@ -72,6 +88,61 @@ export default function SettingsTab() {
                 style={inputStyle}
               />
             </div>
+          </div>
+        </div>
+
+        {/* AI Priority Engine Settings */}
+        <div className="glass-panel" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <Brain color="var(--accent-ai)" size={20} />
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Gemini AI Priority Engine</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Gemini API Key</label>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <input
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={settings.geminiApiKey}
+                  onChange={e => handleChange('geminiApiKey', e.target.value)}
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testing}
+                  style={{
+                    padding: '0 16px', borderRadius: 10,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white', fontWeight: 600, fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                  }}
+                >
+                  {testing ? (
+                    <Loader2 className="spinning" size={14} />
+                  ) : (
+                    'Test'
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {testResult === 'success' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3fb950', fontSize: 13 }}>
+                <Check size={16} /> API Key connection test successful!
+              </div>
+            )}
+            {testResult === 'fail' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontSize: 13 }}>
+                <AlertCircle size={16} /> API connection failed. Please check key/network.
+              </div>
+            )}
+
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+              Get a free Gemini API key from Google AI Studio. This enables contextual daily prioritizing, procrastination micro-actions, and interactive query assistant.
+            </p>
           </div>
         </div>
 

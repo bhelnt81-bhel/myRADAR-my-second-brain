@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Award, FileText, AlertCircle, Copy, Check } from 'lucide-react';
+import { Brain, Award, FileText, AlertCircle, Copy, Check, HelpCircle, Loader2 } from 'lucide-react';
+import { ai } from '../services/ai';
 
 const initialGoals = {
   BHEL: 'Complete disposal of 56 unserviceable AC units',
@@ -26,7 +27,7 @@ const hindiTemplates = {
   }
 };
 
-export default function AIPriorities({ tasks }) {
+export default function AIPriorities({ tasks, energyLevel }) {
   const [goals, setGoals] = useState(() => {
     const saved = localStorage.getItem('myradar_goals');
     return saved ? JSON.parse(saved) : initialGoals;
@@ -40,6 +41,11 @@ export default function AIPriorities({ tasks }) {
   const [selectedTemplate, setSelectedTemplate] = useState('disposal');
   const [draftedHindi, setDraftedHindi] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // AI Chat Assistant State
+  const [chatQuery, setChatQuery] = useState('');
+  const [chatResponse, setChatResponse] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
   // Procrastination state
   const pendingTasks = tasks.filter(t => t.status !== 'completed');
@@ -65,6 +71,24 @@ export default function AIPriorities({ tasks }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleAskAIChat = async (e) => {
+    e.preventDefault();
+    if (!chatQuery.trim()) return;
+
+    setChatLoading(true);
+    setChatResponse('');
+    try {
+      const savedSettings = localStorage.getItem('myradar_settings');
+      const settings = savedSettings ? JSON.parse(savedSettings) : {};
+      const res = await ai.askAIChat(chatQuery, tasks, settings, energyLevel);
+      setChatResponse(res);
+    } catch (err) {
+      setChatResponse("Failed to connect to the AI Assistant. Check your API Key in Settings.");
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <div>
@@ -75,7 +99,7 @@ export default function AIPriorities({ tasks }) {
       </div>
 
       <div className="dashboard-grid">
-        {/* Left Column: Goals & Procrastination */}
+        {/* Left Column: Goals, Chat, & Procrastination */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Goal Alignment */}
           <div className="glass-panel" style={{ padding: 24 }}>
@@ -124,6 +148,61 @@ export default function AIPriorities({ tasks }) {
             </div>
           </div>
 
+          {/* Interactive AI Query: What should I do now? */}
+          <div className="glass-panel" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <HelpCircle color="var(--accent-ai)" size={24} />
+              <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>What should I do now?</h2>
+            </div>
+            
+            <form onSubmit={handleAskAIChat} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
+                Query your Second Brain dynamically in plain language.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <input
+                  type="text"
+                  placeholder="e.g. I have 30 mins and low energy, what should I start?"
+                  value={chatQuery}
+                  onChange={e => setChatQuery(e.target.value)}
+                  style={{
+                    flex: 1, padding: '10px 14px', borderRadius: 10,
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white', fontSize: 13, outline: 'none'
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={chatLoading || !chatQuery.trim()}
+                  style={{
+                    padding: '0 16px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+                    color: 'white', fontWeight: 600, fontSize: 13, border: 'none',
+                    display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                  }}
+                >
+                  {chatLoading ? <Loader2 className="spinning" size={14} /> : 'Ask'}
+                </button>
+              </div>
+              
+              <AnimatePresence>
+                {chatResponse && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: 'rgba(255,255,255,0.02)', padding: 14, borderRadius: 10,
+                      border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)',
+                      fontSize: 13, lineHeight: 1.6
+                    }}
+                  >
+                    {chatResponse}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+          </div>
+
           {/* Procrastination Detector */}
           <div className="glass-panel" style={{ padding: 24, background: 'rgba(239, 68, 68, 0.02)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -140,7 +219,7 @@ export default function AIPriorities({ tasks }) {
                   <div key={task.id} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: 14, borderLeft: `3px solid ${task.domainColor}` }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{task.title}</div>
                     <div style={{ fontSize: 12, color: '#f0883e', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      💡 Recommended first step: spend just 5 minutes writing the title / opening email draft.
+                      💡 Recommended first step: {task.microAction || "spend just 5 minutes writing the title / opening email draft."}
                     </div>
                   </div>
                 ))}
