@@ -38,7 +38,7 @@ const TaskItem = ({ task, index }) => (
   </motion.div>
 );
 
-export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, onCheckIn, onRecalculate }) {
+export default function Dashboard({ tasks, energyLevel, aiInsight, top5Ids, isPrioritizing, onCheckIn, onRecalculate }) {
   const pendingTasks = tasks.filter(t => t.status !== 'completed');
 
   // Loading State
@@ -100,10 +100,10 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
   }
 
   // Prioritized Tasks Mapping
-  const mappedTopTasks = (top3Ids || []).map(id => pendingTasks.find(t => t.id === id)).filter(Boolean);
+  const mappedTopTasks = (top5Ids || []).map(id => pendingTasks.find(t => t.id === id)).filter(Boolean);
   const displayTopTasks = mappedTopTasks.length > 0 
     ? mappedTopTasks 
-    : [...pendingTasks].sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0)).slice(0, 3);
+    : [...pendingTasks].sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0)).slice(0, 5);
 
   // Eisenhower Matrix grouping
   const getQ = (t, qVal) => t.quadrant === qVal || (!t.quadrant && qVal === 'Q1 — DO NOW' && t.urgency === 'High' && (t.importance === 'High' || !t.importance));

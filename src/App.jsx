@@ -48,7 +48,7 @@ export default function App() {
   // Phase 2 State
   const [energyLevel, setEnergyLevel] = useState(null);
   const [aiInsight, setAiInsight] = useState('');
-  const [top3Ids, setTop3Ids] = useState([]);
+  const [top5Ids, setTop5Ids] = useState([]);
   const [isPrioritizing, setIsPrioritizing] = useState(false);
 
   const [typography, setTypography] = useState(() => {
@@ -90,9 +90,9 @@ export default function App() {
       const sortedIds = [...fallbackPrioritized]
         .filter(t => t.status !== 'completed')
         .sort((a,b) => b.priorityScore - a.priorityScore)
-        .slice(0, 3)
+        .slice(0, 5)
         .map(t => t.id);
-      setTop3Ids(sortedIds);
+      setTop5Ids(sortedIds);
       return;
     }
 
@@ -118,12 +118,12 @@ export default function App() {
 
         setTasks(updated);
         setAiInsight(result.insight || '');
-        setTop3Ids(result.top3Ids || []);
+        setTop5Ids(result.top5Ids || []);
 
         localStorage.setItem('myradar_prioritized_state', JSON.stringify({
           tasks: updated,
           insight: result.insight,
-          top3Ids: result.top3Ids
+          top5Ids: result.top5Ids
         }));
       }
     } catch (e) {
@@ -168,7 +168,7 @@ export default function App() {
           });
           setTasks(syncedTasks);
           setAiInsight(parsed.insight || '');
-          setTop3Ids(parsed.top3Ids || []);
+          setTop5Ids(parsed.top5Ids || []);
           setLoading(false);
           return;
         } catch (e) {
@@ -296,7 +296,7 @@ export default function App() {
                   tasks={tasks} 
                   energyLevel={energyLevel}
                   aiInsight={aiInsight}
-                  top3Ids={top3Ids}
+                  top5Ids={top5Ids}
                   isPrioritizing={isPrioritizing}
                   onCheckIn={handleCheckIn}
                   onRecalculate={() => runAIPrioritization(tasks, energyLevel)}
