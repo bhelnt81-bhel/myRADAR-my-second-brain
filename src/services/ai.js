@@ -86,7 +86,7 @@ Instructions for each task:
 5. Suggest a "timeBlockSuggestion" based on current energy and domain.
 
 Generate a single paragraph "insight" (2-3 sentences) summarizing today's focus strategy matching the user's energy level.
-Identify the "top5Ids" in order of execution.`;
+Identify the "top3Ids" in order of execution.`;
 
     const requestBody = {
       contents: [{ parts: [{ text: systemPrompt }] }],
@@ -112,12 +112,12 @@ Identify the "top5Ids" in order of execution.`;
               }
             },
             insight: { type: "STRING" },
-            top5Ids: {
+            top3Ids: {
               type: "ARRAY",
               items: { type: "INTEGER" }
             }
           },
-          required: ["tasks", "insight", "top5Ids"]
+          required: ["tasks", "insight", "top3Ids"]
         }
       }
     };
