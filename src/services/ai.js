@@ -186,5 +186,67 @@ Provide a concise, encouraging, and highly specific answer (2-4 sentences max). 
       console.error("AI Chat consulting failed", e);
       return "Error: Unable to connect to Gemini API. Please verify your API Key and internet connection.";
     }
+  },
+
+  scanTaskFromImage: async (base64Image) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured.");
+    }
+
+    const prompt = `Analyze this image (which may be a printed office memo, a notice circular, a whiteboard capture, or a handwritten note).
+Identify the main action item or task described in the document.
+Extract the task details and return them as a JSON object with the following properties:
+- title: A clear, concise title of the action item/task. If it refers to a document number, file reference, or vendor, include that (e.g. "Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)").
+- domain: One of ['BHEL', 'Intimus', 'Academic', 'Trekking', 'AI & Tech', 'Personal'] based on content keywords.
+- urgency: One of ['High', 'Medium', 'Low'] based on dates or tone.
+- importance: One of ['High', 'Medium', 'Low'].
+- energy: One of ['High', 'Medium', 'Low'] representing cognitive cost.
+- time: A time estimate (e.g. '30m', '45m', '1h', '2h').
+
+Return ONLY this JSON object. Do not include markdown code block formatting or backticks.`;
+
+    const requestBody = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Image
+            }
+          }
+        ]
+      }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING" },
+            domain: { type: "STRING", enum: ["BHEL", "Intimus", "Academic", "Trekking", "AI & Tech", "Personal"] },
+            urgency: { type: "STRING", enum: ["High", "Medium", "Low"] },
+            importance: { type: "STRING", enum: ["High", "Medium", "Low"] },
+            energy: { type: "STRING", enum: ["High", "Medium", "Low"] },
+            time: { type: "STRING" }
+          },
+          required: ["title", "domain", "urgency", "importance", "energy", "time"]
+        }
+      }
+    };
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      throw new Error("Gemini Vision API request failed");
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return JSON.parse(text);
   }
 };
