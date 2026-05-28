@@ -1,24 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-base: #090a0f;
-  --bg-surface: rgba(22, 24, 31, 0.6);
-  --bg-surface-hover: rgba(30, 33, 43, 0.8);
-  --border-color: rgba(255, 255, 255, 0.08);
+  --bg-base: #000000;
+  --bg-surface: rgba(28, 28, 30, 0.7);
+  --bg-surface-hover: rgba(44, 44, 46, 0.8);
+  --border-color: rgba(255, 255, 255, 0.1);
   
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-tertiary: rgba(235, 235, 245, 0.3);
   
-  --accent-bhel: #ef4444;
-  --accent-intimus: #f97316;
-  --accent-academic: #10b981;
-  --accent-trek: #3b82f6;
-  --accent-ai: #8b5cf6;
+  --accent-bhel: #ff453a; /* iOS Red */
+  --accent-intimus: #ff9f0a; /* iOS Orange */
+  --accent-academic: #30d158; /* iOS Green */
+  --accent-trek: #0a84ff; /* iOS Blue */
+  --accent-ai: #5e5ce6; /* iOS Indigo */
   
-  --glass-bg: rgba(15, 17, 26, 0.65);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-bg: rgba(28, 28, 30, 0.65);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   
   /* Font Options */
   --font-scale: 1.1; /* Made default slightly larger for better readability */
@@ -41,7 +41,7 @@
 .font-style-modern-sans p, .font-style-modern-sans span, .font-style-modern-sans label,
 .font-style-modern-sans input, .font-style-modern-sans select, .font-style-modern-sans textarea,
 .font-style-modern-sans button, .font-style-modern-sans pre {
-  font-family: 'Inter', sans-serif !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .font-style-classic-serif,
@@ -67,12 +67,9 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-base);
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.05) 0px, transparent 50%);
+  background-image: none; /* Clean black background for Apple Dark Mode */
   background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
@@ -82,7 +79,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -107,7 +104,7 @@ input, select, textarea, button {
 }
 
 button {
-  font-family: 'Inter', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   cursor: pointer;
   border: none;
   background: none;
