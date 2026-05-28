@@ -141,6 +141,23 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Setup History State for Back Button Support
+    window.history.replaceState({ tab: 'dashboard' }, '');
+
+    const handlePopState = (e) => {
+      if (e.state && e.state.modal === 'capture') {
+        setIsCaptureOpen(true);
+      } else {
+        setIsCaptureOpen(false);
+      }
+      if (e.state && e.state.tab) {
+        setActiveTab(e.state.tab);
+      } else {
+        setActiveTab('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
     const lastCheckin = localStorage.getItem('myradar_last_checkin_date');
     const today = new Date().toDateString();
     const savedEnergy = localStorage.getItem('myradar_energy_level');
@@ -193,8 +210,29 @@ export default function App() {
     };
 
     window.addEventListener('myradar-settings-changed', handleSettingsChange);
-    return () => window.removeEventListener('myradar-settings-changed', handleSettingsChange);
+    return () => {
+      window.removeEventListener('myradar-settings-changed', handleSettingsChange);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
+
+  const handleTabChange = (tabId) => {
+    if (tabId === activeTab) return;
+    setActiveTab(tabId);
+    window.history.pushState({ tab: tabId }, '');
+  };
+
+  const handleOpenCapture = () => {
+    setIsCaptureOpen(true);
+    window.history.pushState({ tab: activeTab, modal: 'capture' }, '');
+  };
+
+  const handleCloseCapture = () => {
+    setIsCaptureOpen(false);
+    if (window.history.state && window.history.state.modal === 'capture') {
+      window.history.back();
+    }
+  };
 
   const fontSizeClass = `font-size-${typography.fontSize.toLowerCase()}`;
   const fontStyleClass = `font-style-${typography.fontStyle.toLowerCase().replace(/\s+/g, '-')}`;
@@ -262,7 +300,7 @@ export default function App() {
               <button
                 key={item.id}
                 className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabChange(item.id)}
               >
                 <Icon className="nav-icon" size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
                 <span className="nav-label">{item.label}</span>
@@ -374,14 +412,14 @@ export default function App() {
       <motion.button 
         className="fab"
         whileTap={{ scale: 0.9 }}
-        onClick={() => setIsCaptureOpen(true)}
+        onClick={handleOpenCapture}
       >
         <Plus size={32} />
       </motion.button>
 
       <QuickCapture 
         isOpen={isCaptureOpen} 
-        onClose={() => setIsCaptureOpen(false)} 
+        onClose={handleCloseCapture} 
         onAdd={handleAddTask} 
       />
     </div>

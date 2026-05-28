@@ -4,13 +4,18 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 
 function getApiKey() {
   try {
+    // First try to load from environment variable
+    if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+      return import.meta.env.VITE_GEMINI_API_KEY;
+    }
+    // Fallback to local storage
     const saved = localStorage.getItem('myradar_settings');
     if (saved) {
       const settings = JSON.parse(saved);
       return settings.geminiApiKey || null;
     }
   } catch (e) {
-    console.error("Error reading geminiApiKey from settings", e);
+    console.error("Error reading geminiApiKey", e);
   }
   return null;
 }
