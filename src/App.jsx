@@ -280,8 +280,17 @@ export default function App() {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const hour = new Date().getHours();
+  const isWorkHours = hour >= 9 && hour < 18;
+  const ambientGlow = isWorkHours 
+    ? 'radial-gradient(circle at top right, rgba(255, 69, 58, 0.08), transparent 50%)' // BHEL Red Glow
+    : 'radial-gradient(circle at top right, rgba(94, 92, 230, 0.1), transparent 50%)';  // AI/Study Indigo Glow
+
   return (
-    <div className={`app-container ${fontSizeClass} ${fontStyleClass}`}>
+    <div 
+      className={`app-container ${fontSizeClass} ${fontStyleClass}`}
+      style={{ backgroundImage: ambientGlow, backgroundColor: 'var(--bg-base)' }}
+    >
       {/* Sidebar */}
       <nav className="sidebar">
         <div className="sidebar-header">

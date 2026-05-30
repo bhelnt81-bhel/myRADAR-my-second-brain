@@ -41,6 +41,7 @@ export default function AIPriorities({ tasks, energyLevel }) {
   const [selectedTemplate, setSelectedTemplate] = useState('disposal');
   const [draftedHindi, setDraftedHindi] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showHindiGenerator, setShowHindiGenerator] = useState(false);
 
   // AI Chat Assistant State
   const [chatQuery, setChatQuery] = useState('');
@@ -230,93 +231,113 @@ export default function AIPriorities({ tasks, energyLevel }) {
           </div>
         </div>
 
-        {/* Right Column: Hindi Admin Note Generator */}
+        {/* Right Column: Hindi Admin Note Generator (Progressive Disclosure) */}
         <div>
           <div className="glass-panel" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <FileText color="var(--accent-bhel)" size={24} />
-              <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>BHEL Hindi Admin Note Generator</h2>
-            </div>
-
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
-              Convert English briefs into standard BHEL Hindi official drafts instantly.
-            </p>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Select Template Type</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {Object.entries(hindiTemplates).map(([key, temp]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedTemplate(key)}
-                    style={{
-                      padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                      fontSize: 12, fontWeight: 600,
-                      background: selectedTemplate === key ? 'var(--accent-bhel)' : 'rgba(255,255,255,0.05)',
-                      color: selectedTemplate === key ? 'white' : 'var(--text-secondary)'
-                    }}
-                  >
-                    {temp.label}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileText color="var(--accent-bhel)" size={24} />
+                <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>BHEL Hindi Note Generator</h2>
               </div>
+              <button 
+                onClick={() => setShowHindiGenerator(!showHindiGenerator)}
+                className="glass-button"
+                style={{ padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}
+              >
+                {showHindiGenerator ? 'Hide' : 'Open Generator'}
+              </button>
             </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Brief Parameters (e.g. "56 AC units", "Flat D1", "Rs. 45,000")</label>
-              <input
-                type="text"
-                value={briefInput}
-                onChange={(e) => setBriefInput(e.target.value)}
-                placeholder="Type specific values to insert into note..."
-                style={{
-                  width: '100%', padding: 12, borderRadius: 12,
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'white', fontSize: 14, outline: 'none'
-                }}
-              />
-            </div>
-
-            <button
-              onClick={generateHindiNote}
-              style={{
-                width: '100%', padding: '12px 0', borderRadius: 12,
-                background: 'linear-gradient(135deg, #ef4444, #f97316)',
-                color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer'
-              }}
-            >
-              Draft Hindi Note 📝
-            </button>
 
             <AnimatePresence>
-              {draftedHindi && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}
+              {showHindiGenerator && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 16, overflow: 'hidden' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Hindi Draft Output:</span>
-                    <button 
-                      onClick={handleCopy}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        fontSize: 12, color: copied ? '#3fb950' : 'var(--text-secondary)',
-                        background: 'transparent', border: 'none', cursor: 'pointer'
-                      }}
-                    >
-                      {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Text'}
-                    </button>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
+                    Convert English briefs into standard BHEL Hindi official drafts instantly.
+                  </p>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Select Template Type</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {Object.entries(hindiTemplates).map(([key, temp]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedTemplate(key)}
+                          style={{
+                            padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                            fontSize: 12, fontWeight: 600,
+                            background: selectedTemplate === key ? 'var(--accent-bhel)' : 'rgba(255,255,255,0.05)',
+                            color: selectedTemplate === key ? 'white' : 'var(--text-secondary)'
+                          }}
+                        >
+                          {temp.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <pre style={{
-                    whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 13,
-                    lineHeight: 1.6, color: '#e6edf3', background: 'rgba(0,0,0,0.2)',
-                    padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)',
-                    margin: 0
-                  }}>
-                    {draftedHindi}
-                  </pre>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Brief Parameters (e.g. "56 AC units", "Flat D1", "Rs. 45,000")</label>
+                    <input
+                      type="text"
+                      value={briefInput}
+                      onChange={(e) => setBriefInput(e.target.value)}
+                      placeholder="Type specific values to insert into note..."
+                      style={{
+                        width: '100%', padding: 12, borderRadius: 12,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white', fontSize: 14, outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={generateHindiNote}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 12,
+                      background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                      color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer'
+                    }}
+                  >
+                    Draft Hindi Note 📝
+                  </button>
+
+                  <AnimatePresence>
+                    {draftedHindi && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Hindi Draft Output:</span>
+                          <button 
+                            onClick={handleCopy}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 4,
+                              fontSize: 12, color: copied ? '#3fb950' : 'var(--text-secondary)',
+                              background: 'transparent', border: 'none', cursor: 'pointer'
+                            }}
+                          >
+                            {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Text'}
+                          </button>
+                        </div>
+                        <pre style={{
+                          whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 13,
+                          lineHeight: 1.6, color: '#e6edf3', background: 'rgba(0,0,0,0.2)',
+                          padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)',
+                          margin: 0
+                        }}>
+                          {draftedHindi}
+                        </pre>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>

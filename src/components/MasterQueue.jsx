@@ -66,11 +66,21 @@ export default function MasterQueue({ tasks, setTasks }) {
               <motion.div
                 key={task.id}
                 initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
                 className="task-card"
-                style={{ alignItems: 'center' }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={async (e, { offset }) => {
+                  if (offset.x > 100) {
+                    const updatedTasks = await db.updateTaskStatus(task.id, 'completed');
+                    setTasks(updatedTasks);
+                  }
+                }}
+                style={{ alignItems: 'center', cursor: 'grab' }}
+                whileTap={{ cursor: 'grabbing' }}
               >
                 <button 
                   style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex', cursor: 'pointer', border: 'none', background: 'transparent' }}
