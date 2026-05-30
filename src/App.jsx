@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, CheckSquare, Brain, FolderOpen, Settings, Plus, Mic } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Brain, FolderOpen, Settings, Plus, Mic, BarChart2 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import MasterQueue from './components/MasterQueue';
 import QuickCapture from './components/QuickCapture';
 import KnowledgeBase from './components/KnowledgeBase';
 import AIPriorities from './components/AIPriorities';
 import SettingsTab from './components/SettingsTab';
+import WeeklyReview from './components/WeeklyReview';
 import { db } from './services/db';
 import { ai } from './services/ai';
 
@@ -275,6 +276,7 @@ export default function App() {
     { id: 'tasks', label: 'Master Queue', icon: CheckSquare },
     { id: 'brain', label: 'AI Priorities', icon: Brain },
     { id: 'knowledge', label: 'Knowledge Base', icon: FolderOpen },
+    { id: 'review', label: 'Weekly Review', icon: BarChart2 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -389,7 +391,19 @@ export default function App() {
                 <SettingsTab />
               </motion.div>
             )}
-            {activeTab !== 'dashboard' && activeTab !== 'tasks' && activeTab !== 'knowledge' && activeTab !== 'brain' && activeTab !== 'settings' && (
+            {activeTab === 'review' && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                <WeeklyReview tasks={tasks} />
+              </motion.div>
+            )}
+            {activeTab !== 'dashboard' && activeTab !== 'tasks' && activeTab !== 'knowledge' && activeTab !== 'brain' && activeTab !== 'review' && activeTab !== 'settings' && (
               <motion.div
                 key="placeholder"
                 initial={{ opacity: 0, y: 10 }}
