@@ -422,12 +422,13 @@ button {
     margin-bottom: 0;
     font-size: 10px;
     justify-content: center;
-    width: 20%;
+    flex: 1;
+    min-width: 0;
   }
 
   .nav-label {
     display: block;
-    font-size: 10px;
+    font-size: 9px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
