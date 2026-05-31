@@ -29,20 +29,26 @@ export const ai = {
 
   testConnection: async (apiKey) => {
     try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey.trim()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: "Respond with the word 'Success' if you can read this." }] }]
         })
       });
-      if (!response.ok) return false;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        return { success: false, error: errData && errData.error ? errData.error.message : `HTTP Error ${response.status}` };
+      }
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      return text.toLowerCase().includes("success");
+      if (text.toLowerCase().includes("success")) {
+        return { success: true };
+      }
+      return { success: false, error: "API connected but did not return expected response." };
     } catch (e) {
       console.error("API Connection test failed", e);
-      return false;
+      return { success: false, error: e.message };
     }
   },
 

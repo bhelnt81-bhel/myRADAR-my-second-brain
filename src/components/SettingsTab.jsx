@@ -25,6 +25,7 @@ export default function SettingsTab() {
   const [savedMessage, setSavedMessage] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null); // 'success' | 'fail' | null
+  const [testError, setTestError] = useState('');
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -48,9 +49,15 @@ export default function SettingsTab() {
     }
     setTesting(true);
     setTestResult(null);
-    const success = await ai.testConnection(settings.geminiApiKey);
+    setTestError('');
+    const res = await ai.testConnection(settings.geminiApiKey);
     setTesting(false);
-    setTestResult(success ? 'success' : 'fail');
+    if (res.success) {
+      setTestResult('success');
+    } else {
+      setTestResult('fail');
+      setTestError(res.error || 'Unknown error');
+    }
   };
 
   return (
@@ -135,8 +142,9 @@ export default function SettingsTab() {
               </div>
             )}
             {testResult === 'fail' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontSize: 13 }}>
-                <AlertCircle size={16} /> API connection failed. Please check key/network.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, color: '#ef4444', fontSize: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={16} /> API connection failed:</div>
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: 8, borderRadius: 6, fontSize: 11, wordBreak: 'break-word' }}>{testError}</div>
               </div>
             )}
 
