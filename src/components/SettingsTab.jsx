@@ -50,7 +50,7 @@ export default function SettingsTab() {
     setTesting(true);
     setTestResult(null);
     setTestError('');
-    const res = await ai.testConnection(settings.geminiApiKey);
+    const res = await ai.testConnection(settings.geminiApiKey, settings.geminiModel);
     setTesting(false);
     if (res.success) {
       setTestResult('success');

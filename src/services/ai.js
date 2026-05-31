@@ -1,15 +1,16 @@
 // Gemini AI Priority Engine integration
 
-const getApiEndpoint = () => {
+const getApiEndpoint = (modelOverride = null) => {
+  if (modelOverride) return `https://generativelanguage.googleapis.com/v1beta/models/${modelOverride}:generateContent`;
   try {
     const saved = localStorage.getItem('myradar_settings');
     if (saved) {
       const settings = JSON.parse(saved);
-      const model = settings.geminiModel || 'gemini-1.5-flash';
+      const model = settings.geminiModel || 'gemini-1.5-flash-latest';
       return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     }
   } catch (e) {}
-  return "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  return "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 };
 
 function getApiKey() {
@@ -37,9 +38,9 @@ export const ai = {
     return !!getApiKey();
   },
 
-  testConnection: async (apiKey) => {
+  testConnection: async (apiKey, modelOverride = null) => {
     try {
-      const response = await fetch(`${getApiEndpoint()}?key=${apiKey.trim()}`, {
+      const response = await fetch(`${getApiEndpoint(modelOverride)}?key=${apiKey.trim()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
