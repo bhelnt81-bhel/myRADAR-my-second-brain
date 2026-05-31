@@ -136,6 +136,21 @@ export default function SettingsTab() {
               </div>
             </div>
 
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Gemini Model Override (If connection fails)</label>
+              <select
+                value={settings.geminiModel || 'gemini-1.5-flash-latest'}
+                onChange={e => handleChange('geminiModel', e.target.value)}
+                style={inputStyle}
+              >
+                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (Recommended)</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                <option value="gemini-1.0-pro">gemini-1.0-pro</option>
+                <option value="gemini-pro">gemini-pro</option>
+              </select>
+            </div>
+
             {testResult === 'success' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3fb950', fontSize: 13 }}>
                 <Check size={16} /> API Key connection test successful!

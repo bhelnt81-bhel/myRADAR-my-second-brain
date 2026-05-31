@@ -1,6 +1,16 @@
 // Gemini AI Priority Engine integration
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const getApiEndpoint = () => {
+  try {
+    const saved = localStorage.getItem('myradar_settings');
+    if (saved) {
+      const settings = JSON.parse(saved);
+      const model = settings.geminiModel || 'gemini-1.5-flash';
+      return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    }
+  } catch (e) {}
+  return "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+};
 
 function getApiKey() {
   try {
@@ -29,7 +39,7 @@ export const ai = {
 
   testConnection: async (apiKey) => {
     try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey.trim()}`, {
+      const response = await fetch(`${getApiEndpoint()}?key=${apiKey.trim()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +146,7 @@ Identify the "top3Ids" in order of execution.`;
     };
 
     try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      const response = await fetch(`${getApiEndpoint()}?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody)
@@ -181,7 +191,7 @@ User Question: "${query}"
 Provide a concise, encouraging, and highly specific answer (2-4 sentences max). Give direct recommendations on which exact task to select and what first micro-step to take. Speak in a helpful corporate/chief-of-staff tone.`;
 
     try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      const response = await fetch(`${getApiEndpoint()}?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -248,7 +258,7 @@ Return ONLY this JSON object. Do not include markdown code block formatting or b
       }
     };
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${getApiEndpoint()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody)
