@@ -143,8 +143,9 @@ export default function SettingsTab() {
                 onChange={e => handleChange('geminiModel', e.target.value)}
                 style={inputStyle}
               >
-                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (Recommended)</option>
+                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (Default, Fast)</option>
                 <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest (Most Capable)</option>
                 <option value="gemini-1.5-pro">gemini-1.5-pro</option>
                 <option value="gemini-1.0-pro">gemini-1.0-pro</option>
                 <option value="gemini-pro">gemini-pro</option>
