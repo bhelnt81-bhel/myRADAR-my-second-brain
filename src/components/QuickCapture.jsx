@@ -170,7 +170,10 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         setDetectedTasks([
           { id: 'temp-0', title: "Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)", domain: "BHEL", urgency: "High", energy: "High", time: "45m", selected: true },
-          { id: 'temp-1', title: "Call vendor Sehgal for AMC renewal", domain: "BHEL", urgency: "Medium", energy: "Low", time: "15m", selected: true }
+          { id: 'temp-1', title: "Call vendor Sehgal for AMC renewal", domain: "BHEL", urgency: "Medium", energy: "Low", time: "15m", selected: true },
+          { id: 'temp-2', title: "Review Intimus Q3 marketing strategy", domain: "Intimus", urgency: "Medium", energy: "Medium", time: "30m", selected: true },
+          { id: 'temp-3', title: "Read Chapter 4 for EMBA Case Study", domain: "Academic", urgency: "High", energy: "High", time: "60m", selected: true },
+          { id: 'temp-4', title: "Buy trekking gear (poles and boots)", domain: "Trekking", urgency: "Low", energy: "Low", time: "30m", selected: true }
         ]);
       }
     } catch (err) {
@@ -205,7 +208,10 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
           await new Promise(resolve => setTimeout(resolve, 1500));
           setDetectedTasks([
             { id: 'temp-0', title: "Review uploaded design mockup", domain: "Intimus", urgency: "Medium", energy: "Low", time: "15m", selected: true },
-            { id: 'temp-1', title: "Update EMBA Case Study notes", domain: "Academic", urgency: "High", energy: "Medium", time: "1h", selected: true }
+            { id: 'temp-1', title: "Update EMBA Case Study notes", domain: "Academic", urgency: "High", energy: "Medium", time: "60m", selected: true },
+            { id: 'temp-2', title: "Schedule meeting with BHEL vendors", domain: "BHEL", urgency: "Medium", energy: "Low", time: "30m", selected: true },
+            { id: 'temp-3', title: "Fix bug in React application header", domain: "Intimus", urgency: "High", energy: "High", time: "45m", selected: true },
+            { id: 'temp-4', title: "Walk 5km for altitude training", domain: "Trekking", urgency: "Medium", energy: "High", time: "60m", selected: true }
           ]);
         }
       } catch (err) {
@@ -371,6 +377,20 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
                               <option value="Medium">Medium</option>
                               <option value="Low">Low</option>
                             </select>
+                            <select
+                              value={task.time}
+                              onChange={(e) => {
+                                const newTasks = [...detectedTasks];
+                                newTasks[idx].time = e.target.value;
+                                setDetectedTasks(newTasks);
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'var(--text-secondary)', fontSize: 11, borderRadius: 4, padding: '2px 6px' }}
+                            >
+                              <option value="15m">15m</option>
+                              <option value="30m">30m</option>
+                              <option value="45m">45m</option>
+                              <option value="60m">60m</option>
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -476,17 +496,22 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Time Estimate</label>
-                      <input 
+                      <select 
                         value={time}
                         onChange={e => setTime(e.target.value)}
-                        placeholder="e.g. 30m, 2h"
                         style={{
                           width: '100%', padding: 12, borderRadius: 12,
-                          background: 'rgba(255,255,255,0.05)',
+                          background: 'rgba(0,0,0,0.5)',
                           border: '1px solid rgba(255,255,255,0.1)',
-                          color: 'white', fontSize: 14, outline: 'none'
+                          color: 'white', fontSize: 14, outline: 'none',
+                          appearance: 'none'
                         }}
-                      />
+                      >
+                        <option value="15m">15 mins</option>
+                        <option value="30m">30 mins</option>
+                        <option value="45m">45 mins</option>
+                        <option value="60m">60 mins</option>
+                      </select>
                     </div>
                   </div>
 
