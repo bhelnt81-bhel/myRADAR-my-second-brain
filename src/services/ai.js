@@ -228,7 +228,7 @@ Provide a concise, encouraging, and highly specific answer (2-4 sentences max). 
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to consult your tasks. Please check your network connection.";
     } catch (e) {
       console.error("AI Chat consulting failed", e);
-      return \`Error: \${e.message}\`;
+      return `Error: ${e.message}`;
     }
   },
 

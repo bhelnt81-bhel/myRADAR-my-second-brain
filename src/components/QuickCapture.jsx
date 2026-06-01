@@ -164,7 +164,7 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
       if (ai.hasKey()) {
         const result = await ai.scanTaskFromImage(base64Data);
         if (result && result.tasks && result.tasks.length > 0) {
-          setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: \`temp-cam-\${idx}\` })));
+          setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: `temp-cam-${idx}` })));
         }
       } else {
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -202,7 +202,7 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
         if (ai.hasKey()) {
           const result = await ai.scanTaskFromImage(base64Data);
           if (result && result.tasks && result.tasks.length > 0) {
-            setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: \`temp-file-\${idx}\` })));
+            setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: `temp-file-${idx}` })));
           }
         } else {
           await new Promise(resolve => setTimeout(resolve, 1500));
