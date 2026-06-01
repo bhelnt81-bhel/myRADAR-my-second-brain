@@ -38,6 +38,24 @@ export const ai = {
     return !!getApiKey();
   },
 
+  getAvailableModels: async (apiKey) => {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}`);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        return { success: false, error: errData && errData.error ? errData.error.message : `HTTP Error ${response.status}` };
+      }
+      const data = await response.json();
+      const models = data.models
+        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => m.name.replace('models/', ''));
+      return { success: true, models };
+    } catch (e) {
+      console.error("Failed to fetch models", e);
+      return { success: false, error: e.message };
+    }
+  },
+
   testConnection: async (apiKey, modelOverride = null) => {
     try {
       const response = await fetch(`${getApiEndpoint(modelOverride)}?key=${apiKey.trim()}`, {

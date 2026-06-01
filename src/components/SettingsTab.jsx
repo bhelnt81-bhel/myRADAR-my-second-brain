@@ -26,6 +26,10 @@ export default function SettingsTab() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null); // 'success' | 'fail' | null
   const [testError, setTestError] = useState('');
+  
+  const [availableModels, setAvailableModels] = useState([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [fetchModelError, setFetchModelError] = useState('');
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -57,6 +61,25 @@ export default function SettingsTab() {
     } else {
       setTestResult('fail');
       setTestError(res.error || 'Unknown error');
+    }
+  };
+
+  const handleFetchModels = async () => {
+    if (!settings.geminiApiKey) {
+      alert("Please enter a Gemini API Key first.");
+      return;
+    }
+    setFetchingModels(true);
+    setFetchModelError('');
+    const res = await ai.getAvailableModels(settings.geminiApiKey);
+    setFetchingModels(false);
+    if (res.success) {
+      setAvailableModels(res.models);
+      if (res.models.length > 0 && !res.models.includes(settings.geminiModel)) {
+         handleChange('geminiModel', res.models[0]);
+      }
+    } else {
+      setFetchModelError(res.error || 'Failed to fetch models');
     }
   };
 
@@ -137,19 +160,41 @@ export default function SettingsTab() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>Gemini Model Override (If connection fails)</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>Gemini Model Override</label>
+                <button
+                  type="button"
+                  onClick={handleFetchModels}
+                  disabled={fetchingModels}
+                  style={{
+                    background: 'none', border: 'none', color: 'var(--accent-ai)',
+                    fontSize: 11, cursor: 'pointer', padding: 0, textDecoration: 'underline'
+                  }}
+                >
+                  {fetchingModels ? 'Fetching...' : 'Fetch Available Models'}
+                </button>
+              </div>
               <select
                 value={settings.geminiModel || 'gemini-1.5-flash-latest'}
                 onChange={e => handleChange('geminiModel', e.target.value)}
                 style={inputStyle}
               >
-                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (Default, Fast)</option>
-                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest (Most Capable)</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                <option value="gemini-1.0-pro">gemini-1.0-pro</option>
-                <option value="gemini-pro">gemini-pro</option>
+                {availableModels.length > 0 ? (
+                  availableModels.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (Default, Fast)</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                    <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest (Most Capable)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="gemini-1.0-pro">gemini-1.0-pro</option>
+                    <option value="gemini-pro">gemini-pro</option>
+                  </>
+                )}
               </select>
+              {fetchModelError && <p style={{ fontSize: 11, color: '#ef4444', margin: '4px 0 0 0' }}>{fetchModelError}</p>}
             </div>
 
             {testResult === 'success' && (
