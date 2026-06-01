@@ -172,7 +172,8 @@ Identify the "top3Ids" in order of execution.`;
       });
 
       if (!response.ok) {
-        throw new Error(`API Error: Status ${response.status}`);
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData && errData.error ? errData.error.message : `API Error: Status ${response.status}`);
       }
 
       const data = await response.json();
@@ -219,14 +220,15 @@ Provide a concise, encouraging, and highly specific answer (2-4 sentences max). 
       });
 
       if (!response.ok) {
-        throw new Error("Failed to consult AI");
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData && errData.error ? errData.error.message : "Failed to consult AI");
       }
 
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to consult your tasks. Please check your network connection.";
     } catch (e) {
       console.error("AI Chat consulting failed", e);
-      return "Error: Unable to connect to Gemini API. Please verify your API Key and internet connection.";
+      return \`Error: \${e.message}\`;
     }
   },
 
