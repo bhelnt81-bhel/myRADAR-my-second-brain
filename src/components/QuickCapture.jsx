@@ -12,9 +12,25 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
 
   const [isListening, setIsListening] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [detectedTasks, setDetectedTasks] = useState([]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (detectedTasks.length > 0) {
+      detectedTasks.filter(t => t.selected).forEach(t => {
+        onAdd({
+          title: t.title,
+          domain: t.domain,
+          urgency: t.urgency,
+          energy: t.energy,
+          time: t.time
+        });
+      });
+      setDetectedTasks([]);
+      onClose();
+      return;
+    }
+
     if (!title.trim()) return;
     
     onAdd({
@@ -147,29 +163,21 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
 
       if (ai.hasKey()) {
         const result = await ai.scanTaskFromImage(base64Data);
-        if (result && result.title) {
-          setTitle(result.title);
-          setDomain(result.domain || 'BHEL');
-          setUrgency(result.urgency || 'Medium');
-          setEnergy(result.energy || 'Medium');
-          setTime(result.time || '30m');
+        if (result && result.tasks && result.tasks.length > 0) {
+          setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: \`temp-cam-\${idx}\` })));
         }
       } else {
-        // Fallback to simulated OCR scan results if API key is not present
         await new Promise(resolve => setTimeout(resolve, 1500));
-        setTitle("Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)");
-        setDomain("BHEL");
-        setUrgency("High");
-        setEnergy("High");
-        setTime("45m");
+        setDetectedTasks([
+          { id: 'temp-0', title: "Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)", domain: "BHEL", urgency: "High", energy: "High", time: "45m", selected: true },
+          { id: 'temp-1', title: "Call vendor Sehgal for AMC renewal", domain: "BHEL", urgency: "Medium", energy: "Low", time: "15m", selected: true }
+        ]);
       }
     } catch (err) {
       console.error("OCR scan failed, using fallback mock", err);
-      setTitle("Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)");
-      setDomain("BHEL");
-      setUrgency("High");
-      setEnergy("High");
-      setTime("45m");
+      setDetectedTasks([
+        { id: 'temp-0', title: "Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)", domain: "BHEL", urgency: "High", energy: "High", time: "45m", selected: true }
+      ]);
     } finally {
       setIsScanning(false);
     }
@@ -190,29 +198,21 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
         
         if (ai.hasKey()) {
           const result = await ai.scanTaskFromImage(base64Data);
-          if (result && result.title) {
-            setTitle(result.title);
-            setDomain(result.domain || 'BHEL');
-            setUrgency(result.urgency || 'Medium');
-            setEnergy(result.energy || 'Medium');
-            setTime(result.time || '30m');
+          if (result && result.tasks && result.tasks.length > 0) {
+            setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: \`temp-file-\${idx}\` })));
           }
         } else {
-          // Fallback to simulated OCR scan results if API key is not present
           await new Promise(resolve => setTimeout(resolve, 1500));
-          setTitle("Review uploaded design mockup");
-          setDomain("Intimus");
-          setUrgency("Medium");
-          setEnergy("Low");
-          setTime("15m");
+          setDetectedTasks([
+            { id: 'temp-0', title: "Review uploaded design mockup", domain: "Intimus", urgency: "Medium", energy: "Low", time: "15m", selected: true },
+            { id: 'temp-1', title: "Update EMBA Case Study notes", domain: "Academic", urgency: "High", energy: "Medium", time: "1h", selected: true }
+          ]);
         }
       } catch (err) {
         console.error("Upload OCR failed, using fallback mock", err);
-        setTitle("Review uploaded design mockup");
-        setDomain("Intimus");
-        setUrgency("Medium");
-        setEnergy("Low");
-        setTime("15m");
+        setDetectedTasks([
+          { id: 'temp-0', title: "Review uploaded design mockup", domain: "Intimus", urgency: "Medium", energy: "Low", time: "15m", selected: true }
+        ]);
       } finally {
         setIsScanning(false);
         if (fileInputRef.current) {
@@ -320,151 +320,227 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
             <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Quick Capture</h2>
             
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                  Task Title {isListening && <span style={{ color: '#ef4444', fontSize: 11, marginLeft: 8 }}>🔴 Dictating... Speak now</span>}
-                </label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input 
-                    autoFocus
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    placeholder="What needs to be done?"
-                    style={{
-                      flex: 1, padding: 12, borderRadius: 12,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: 15, outline: 'none'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVoiceCapture}
-                    style={{
-                      width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-                      background: isListening ? '#ef4444' : 'rgba(255,255,255,0.05)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}
-                    title="Hinglish Voice Capture"
-                  >
-                    <Mic size={20} className={isListening ? 'pulse' : ''} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={startCamera}
-                    style={{
-                      width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.05)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}
-                    title="OCR Document Scanner"
-                  >
-                    <Camera size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.05)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}
-                    title="Upload Photo for OCR"
-                  >
-                    <ImagePlus size={20} />
-                  </button>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    ref={fileInputRef} 
-                    onChange={handleFileUpload} 
-                    style={{ display: 'none' }} 
-                  />
+              {detectedTasks.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <h3 style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Detected Tasks ({detectedTasks.length})</h3>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+                    {detectedTasks.map((task, idx) => (
+                      <div key={task.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <input
+                          type="checkbox"
+                          checked={task.selected}
+                          onChange={(e) => {
+                            const newTasks = [...detectedTasks];
+                            newTasks[idx].selected = e.target.checked;
+                            setDetectedTasks(newTasks);
+                          }}
+                          style={{ width: 18, height: 18, marginTop: 2, cursor: 'pointer', accentColor: 'var(--accent-ai)' }}
+                        />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <input
+                            value={task.title}
+                            onChange={(e) => {
+                              const newTasks = [...detectedTasks];
+                              newTasks[idx].title = e.target.value;
+                              setDetectedTasks(newTasks);
+                            }}
+                            style={{ width: '100%', background: 'transparent', border: 'none', color: 'white', fontSize: 14, fontWeight: 500, outline: 'none' }}
+                          />
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <select
+                              value={task.domain}
+                              onChange={(e) => {
+                                const newTasks = [...detectedTasks];
+                                newTasks[idx].domain = e.target.value;
+                                setDetectedTasks(newTasks);
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'var(--text-secondary)', fontSize: 11, borderRadius: 4, padding: '2px 6px' }}
+                            >
+                              {domains.map(d => <option key={d.id} value={d.id}>{d.id}</option>)}
+                            </select>
+                            <select
+                              value={task.urgency}
+                              onChange={(e) => {
+                                const newTasks = [...detectedTasks];
+                                newTasks[idx].urgency = e.target.value;
+                                setDetectedTasks(newTasks);
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'var(--text-secondary)', fontSize: 11, borderRadius: 4, padding: '2px 6px' }}
+                            >
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                     <button
+                        type="button"
+                        onClick={() => setDetectedTasks([])}
+                        style={{ flex: 1, padding: '12px 0', borderRadius: 12, background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: 14, border: 'none', cursor: 'pointer' }}
+                     >
+                       Discard
+                     </button>
+                     <button
+                        type="submit"
+                        style={{ flex: 2, padding: '12px 0', borderRadius: 12, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                     >
+                       Add Selected ({detectedTasks.filter(t => t.selected).length})
+                     </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                      Task Title {isListening && <span style={{ color: '#ef4444', fontSize: 11, marginLeft: 8 }}>🔴 Dictating... Speak now</span>}
+                    </label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input 
+                        autoFocus
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="What needs to be done?"
+                        style={{
+                          flex: 1, padding: 12, borderRadius: 12,
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'white', fontSize: 15, outline: 'none'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVoiceCapture}
+                        style={{
+                          width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
+                          background: isListening ? '#ef4444' : 'rgba(255,255,255,0.05)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                        }}
+                        title="Hinglish Voice Capture"
+                      >
+                        <Mic size={20} className={isListening ? 'pulse' : ''} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        style={{
+                          width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
+                          background: 'rgba(255,255,255,0.05)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                        }}
+                        title="OCR Document Scanner"
+                      >
+                        <Camera size={20} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          width: 44, height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
+                          background: 'rgba(255,255,255,0.05)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                        }}
+                        title="Upload Photo for OCR"
+                      >
+                        <ImagePlus size={20} />
+                      </button>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        style={{ display: 'none' }} 
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Domain</label>
-                  <select 
-                    value={domain}
-                    onChange={e => setDomain(e.target.value)}
-                    style={{
-                      width: '100%', padding: 12, borderRadius: 12,
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: 14, outline: 'none',
-                      appearance: 'none'
-                    }}
-                  >
-                    {domains.map(d => <option key={d.id} value={d.id}>{d.id}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Time Estimate</label>
-                  <input 
-                    value={time}
-                    onChange={e => setTime(e.target.value)}
-                    placeholder="e.g. 30m, 2h"
-                    style={{
-                      width: '100%', padding: 12, borderRadius: 12,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: 14, outline: 'none'
-                    }}
-                  />
-                </div>
-              </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Domain</label>
+                      <select 
+                        value={domain}
+                        onChange={e => setDomain(e.target.value)}
+                        style={{
+                          width: '100%', padding: 12, borderRadius: 12,
+                          background: 'rgba(0,0,0,0.5)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'white', fontSize: 14, outline: 'none',
+                          appearance: 'none'
+                        }}
+                      >
+                        {domains.map(d => <option key={d.id} value={d.id}>{d.id}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Time Estimate</label>
+                      <input 
+                        value={time}
+                        onChange={e => setTime(e.target.value)}
+                        placeholder="e.g. 30m, 2h"
+                        style={{
+                          width: '100%', padding: 12, borderRadius: 12,
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'white', fontSize: 14, outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Urgency</label>
-                  <select 
-                    value={urgency}
-                    onChange={e => setUrgency(e.target.value)}
-                    style={{
-                      width: '100%', padding: 12, borderRadius: 12,
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: 14, outline: 'none',
-                      appearance: 'none'
-                    }}
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Energy Level</label>
-                  <select 
-                    value={energy}
-                    onChange={e => setEnergy(e.target.value)}
-                    style={{
-                      width: '100%', padding: 12, borderRadius: 12,
-                      background: 'rgba(0,0,0,0.5)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: 14, outline: 'none',
-                      appearance: 'none'
-                    }}
-                  >
-                    <option value="High">High Energy</option>
-                    <option value="Medium">Medium Energy</option>
-                    <option value="Low">Low Energy</option>
-                  </select>
-                </div>
-              </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Urgency</label>
+                      <select 
+                        value={urgency}
+                        onChange={e => setUrgency(e.target.value)}
+                        style={{
+                          width: '100%', padding: 12, borderRadius: 12,
+                          background: 'rgba(0,0,0,0.5)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'white', fontSize: 14, outline: 'none',
+                          appearance: 'none'
+                        }}
+                      >
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Energy Level</label>
+                      <select 
+                        value={energy}
+                        onChange={e => setEnergy(e.target.value)}
+                        style={{
+                          width: '100%', padding: 12, borderRadius: 12,
+                          background: 'rgba(0,0,0,0.5)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'white', fontSize: 14, outline: 'none',
+                          appearance: 'none'
+                        }}
+                      >
+                        <option value="High">High Energy</option>
+                        <option value="Medium">Medium Energy</option>
+                        <option value="Low">Low Energy</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <button 
-                type="submit"
-                style={{
-                  width: '100%', padding: '14px 0', marginTop: 16,
-                  borderRadius: 12, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                  color: 'white', fontSize: 16, fontWeight: 600, border: 'none', cursor: 'pointer'
-                }}
-              >
-                Add Task
-              </button>
+                  <button 
+                    type="submit"
+                    style={{
+                      width: '100%', padding: '14px 0', marginTop: 16,
+                      borderRadius: 12, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                      color: 'white', fontSize: 16, fontWeight: 600, border: 'none', cursor: 'pointer'
+                    }}
+                  >
+                    Add Task
+                  </button>
+                </>
+              )}
             </form>
           </motion.div>
         </div>

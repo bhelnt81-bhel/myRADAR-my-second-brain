@@ -238,9 +238,9 @@ Provide a concise, encouraging, and highly specific answer (2-4 sentences max). 
       throw new Error("Gemini API key is not configured.");
     }
 
-    const prompt = `Analyze this image (which may be a printed office memo, a notice circular, a whiteboard capture, or a handwritten note).
-Identify the main action item or task described in the document.
-Extract the task details and return them as a JSON object with the following properties:
+    const prompt = `Analyze this image (which may be a printed office memo, a notice circular, a whiteboard capture, or a handwritten to-do list).
+Identify ALL action items or tasks described in the document.
+Extract the task details and return them as a JSON array of objects. Each object must have the following properties:
 - title: A clear, concise title of the action item/task. If it refers to a document number, file reference, or vendor, include that (e.g. "Prepare AC fleet disposal note (File Ref: BHEL/EST/2026)").
 - domain: One of ['BHEL', 'Intimus', 'Academic', 'Trekking', 'AI & Tech', 'Personal'] based on content keywords.
 - urgency: One of ['High', 'Medium', 'Low'] based on dates or tone.
@@ -248,7 +248,7 @@ Extract the task details and return them as a JSON object with the following pro
 - energy: One of ['High', 'Medium', 'Low'] representing cognitive cost.
 - time: A time estimate (e.g. '30m', '45m', '1h', '2h').
 
-Return ONLY this JSON object. Do not include markdown code block formatting or backticks.`;
+Return ONLY this JSON object containing the 'tasks' array. Do not include markdown code block formatting or backticks.`;
 
     const requestBody = {
       contents: [{
@@ -267,14 +267,23 @@ Return ONLY this JSON object. Do not include markdown code block formatting or b
         responseSchema: {
           type: "OBJECT",
           properties: {
-            title: { type: "STRING" },
-            domain: { type: "STRING", enum: ["BHEL", "Intimus", "Academic", "Trekking", "AI & Tech", "Personal"] },
-            urgency: { type: "STRING", enum: ["High", "Medium", "Low"] },
-            importance: { type: "STRING", enum: ["High", "Medium", "Low"] },
-            energy: { type: "STRING", enum: ["High", "Medium", "Low"] },
-            time: { type: "STRING" }
+            tasks: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  title: { type: "STRING" },
+                  domain: { type: "STRING", enum: ["BHEL", "Intimus", "Academic", "Trekking", "AI & Tech", "Personal"] },
+                  urgency: { type: "STRING", enum: ["High", "Medium", "Low"] },
+                  importance: { type: "STRING", enum: ["High", "Medium", "Low"] },
+                  energy: { type: "STRING", enum: ["High", "Medium", "Low"] },
+                  time: { type: "STRING" }
+                },
+                required: ["title", "domain", "urgency", "importance", "energy", "time"]
+              }
+            }
           },
-          required: ["title", "domain", "urgency", "importance", "energy", "time"]
+          required: ["tasks"]
         }
       }
     };
