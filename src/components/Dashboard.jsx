@@ -1,18 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Zap, TrendingUp, AlertTriangle, Brain, RefreshCw } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 import { Badge } from './ui/Badge';
+import TaskDetailsModal from './TaskDetailsModal';
+import { db } from '../services/db';
+import { useTasksContext } from '../context/TaskContext';
 
-const TaskItem = ({ task, index }) => (
+const TaskItem = ({ task, index, onStart }) => (
   <motion.div 
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay: index * 0.1 }}
     className="task-card"
-    style={{ position: 'relative' }}
+    style={{ 
+      position: 'relative', 
+      border: task.status === 'in_progress' ? `1px solid ${task.domainColor}` : '1px solid rgba(255, 255, 255, 0.04)',
+      boxShadow: task.status === 'in_progress' ? `0 0 10px ${task.domainColor}40` : 'none',
+      alignItems: 'center'
+    }}
   >
-    <div style={{ width: 4, height: 48, background: task.domainColor, borderRadius: 2 }} />
+    <div style={{ width: 4, height: 48, background: task.domainColor, borderRadius: 2, flexShrink: 0 }} />
     <div style={{ flex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
         <Badge color={task.domainColor}>{task.domain}</Badge>
@@ -22,6 +30,9 @@ const TaskItem = ({ task, index }) => (
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
           <Zap size={11} aria-hidden="true" /> <span className="sr-only">Energy:</span> {task.energy}
         </span>
+        {task.status === 'in_progress' && (
+          <Badge color="#10b981">In Progress</Badge>
+        )}
         {task.priorityScore !== undefined && (
           <Badge type="score">Score: {task.priorityScore}</Badge>
         )}
@@ -33,11 +44,39 @@ const TaskItem = ({ task, index }) => (
         </div>
       )}
     </div>
+    <button 
+      onClick={() => onStart(task)} 
+      className="glass-button" 
+      style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, flexShrink: 0 }}
+    >
+      Start
+    </button>
   </motion.div>
 );
 
 export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, onCheckIn, onRecalculate }) {
+  const [selectedTask, setSelectedTask] = useState(null);
+  const { handleUpdateTasks } = useTasksContext();
+  
   const pendingTasks = tasks.filter(t => t.status !== 'completed');
+
+  const handleStartTask = async (task) => {
+    setSelectedTask(task);
+    if (task.status !== 'in_progress') {
+      const updatedTasks = await db.updateTaskStatus(task.id, 'in_progress');
+      handleUpdateTasks(updatedTasks);
+      
+      // Update selected task reference so modal reflects the new status
+      const activeTask = updatedTasks.find(t => t.id === task.id);
+      setSelectedTask(activeTask);
+    }
+  };
+
+  const handleCompleteTask = async (taskId) => {
+    const updatedTasks = await db.updateTaskStatus(taskId, 'completed');
+    handleUpdateTasks(updatedTasks);
+    setSelectedTask(null);
+  };
 
   if (isPrioritizing) {
     return (
@@ -161,7 +200,9 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {displayTopTasks.length > 0 ? (
-              displayTopTasks.map((task, i) => <TaskItem key={task.id} task={task} index={i} />)
+              displayTopTasks.map((task, i) => (
+                <TaskItem key={task.id} task={task} index={i} onStart={handleStartTask} />
+              ))
             ) : (
               <div style={{ color: 'var(--text-tertiary)', padding: 16, background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: 12, textAlign: 'center' }}>
                 All caught up! Add tasks using the Quick Capture FAB.
@@ -228,6 +269,13 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
           </GlassCard>
         </aside>
       </div>
+
+      <TaskDetailsModal 
+        isOpen={!!selectedTask} 
+        task={selectedTask} 
+        onClose={() => setSelectedTask(null)} 
+        onComplete={handleCompleteTask} 
+      />
     </div>
   );
 }

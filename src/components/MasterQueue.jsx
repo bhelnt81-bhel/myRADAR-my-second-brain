@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Zap, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { Clock, Zap, CheckCircle2, Circle } from 'lucide-react';
 import { db } from '../services/db';
+import TaskDetailsModal from './TaskDetailsModal';
 
 const domains = [
   { id: 'All', label: 'All Domains', color: 'var(--text-secondary)' },
@@ -14,6 +15,7 @@ const domains = [
 
 export default function MasterQueue({ tasks, setTasks }) {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const filteredTasks = activeFilter === 'All' 
     ? tasks 
@@ -21,6 +23,22 @@ export default function MasterQueue({ tasks, setTasks }) {
 
   const pendingTasks = filteredTasks.filter(t => t.status !== 'completed');
   const completedTasks = filteredTasks.filter(t => t.status === 'completed');
+
+  const handleStartTask = async (task) => {
+    setSelectedTask(task);
+    if (task.status !== 'in_progress') {
+      const updatedTasks = await db.updateTaskStatus(task.id, 'in_progress');
+      setTasks(updatedTasks);
+      const activeTask = updatedTasks.find(t => t.id === task.id);
+      setSelectedTask(activeTask);
+    }
+  };
+
+  const handleCompleteTask = async (taskId) => {
+    const updatedTasks = await db.updateTaskStatus(taskId, 'completed');
+    setTasks(updatedTasks);
+    setSelectedTask(null);
+  };
 
   return (
     <div className="page-container">
@@ -31,7 +49,6 @@ export default function MasterQueue({ tasks, setTasks }) {
         </p>
       </div>
 
-      {/* Domain Filters */}
       <div className="filters-container">
         {domains.map(domain => (
           <button
@@ -49,7 +66,6 @@ export default function MasterQueue({ tasks, setTasks }) {
         ))}
       </div>
 
-      {/* Task List */}
       <div className="glass-panel" style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Pending Actions ({pendingTasks.length})</h2>
@@ -70,19 +86,20 @@ export default function MasterQueue({ tasks, setTasks }) {
                 dragElastic={0.2}
                 onDragEnd={async (e, { offset }) => {
                   if (offset.x > 100) {
-                    const updatedTasks = await db.updateTaskStatus(task.id, 'completed');
-                    setTasks(updatedTasks);
+                    handleCompleteTask(task.id);
                   }
                 }}
-                style={{ alignItems: 'center', cursor: 'grab' }}
+                style={{ 
+                  alignItems: 'center', 
+                  cursor: 'grab',
+                  border: task.status === 'in_progress' ? `1px solid ${task.domainColor}` : '1px solid rgba(255, 255, 255, 0.04)',
+                  boxShadow: task.status === 'in_progress' ? `0 0 10px ${task.domainColor}40` : 'none'
+                }}
                 whileTap={{ cursor: 'grabbing' }}
               >
                 <button 
                   style={{ color: 'var(--text-tertiary)', padding: 0, display: 'flex', cursor: 'pointer', border: 'none', background: 'transparent' }}
-                  onClick={async () => {
-                    const updatedTasks = await db.updateTaskStatus(task.id, 'completed');
-                    setTasks(updatedTasks);
-                  }}
+                  onClick={() => handleCompleteTask(task.id)}
                 >
                   <Circle size={22} />
                 </button>
@@ -98,11 +115,20 @@ export default function MasterQueue({ tasks, setTasks }) {
                     <span style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Zap size={12} /> {task.energy} Energy
                     </span>
+                    {task.status === 'in_progress' && (
+                      <span style={{ fontSize: 10, background: '#10b981', padding: '2px 6px', borderRadius: 10, color: 'white', fontWeight: 700 }}>
+                        In Progress
+                      </span>
+                    )}
                   </div>
                   <h3 style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{task.title}</h3>
                 </div>
                 
-                <button className="glass-button" style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+                <button 
+                  onClick={() => handleStartTask(task)}
+                  className="glass-button" 
+                  style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}
+                >
                   Start
                 </button>
               </motion.div>
@@ -116,7 +142,6 @@ export default function MasterQueue({ tasks, setTasks }) {
           )}
         </div>
 
-        {/* Completed Section */}
         {completedTasks.length > 0 && (
           <div style={{ marginTop: 40 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Completed Today</h2>
@@ -133,6 +158,13 @@ export default function MasterQueue({ tasks, setTasks }) {
           </div>
         )}
       </div>
+
+      <TaskDetailsModal 
+        isOpen={!!selectedTask} 
+        task={selectedTask} 
+        onClose={() => setSelectedTask(null)} 
+        onComplete={handleCompleteTask} 
+      />
     </div>
   );
 }
