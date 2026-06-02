@@ -40,6 +40,12 @@ export default function MasterQueue({ tasks, setTasks }) {
     setSelectedTask(null);
   };
 
+  const handleRevertTask = async (taskId) => {
+    const updatedTasks = await db.updateTaskStatus(taskId, 'pending');
+    setTasks(updatedTasks);
+    setSelectedTask(null);
+  };
+
   return (
     <div className="page-container">
       <div style={{ marginBottom: 32 }}>
@@ -163,7 +169,8 @@ export default function MasterQueue({ tasks, setTasks }) {
         isOpen={!!selectedTask} 
         task={selectedTask} 
         onClose={() => setSelectedTask(null)} 
-        onComplete={handleCompleteTask} 
+        onComplete={handleCompleteTask}
+        onRevert={handleRevertTask}
       />
     </div>
   );

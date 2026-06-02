@@ -78,6 +78,12 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
     setSelectedTask(null);
   };
 
+  const handleRevertTask = async (taskId) => {
+    const updatedTasks = await db.updateTaskStatus(taskId, 'pending');
+    handleUpdateTasks(updatedTasks);
+    setSelectedTask(null);
+  };
+
   if (isPrioritizing) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
@@ -274,7 +280,8 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
         isOpen={!!selectedTask} 
         task={selectedTask} 
         onClose={() => setSelectedTask(null)} 
-        onComplete={handleCompleteTask} 
+        onComplete={handleCompleteTask}
+        onRevert={handleRevertTask}
       />
     </div>
   );

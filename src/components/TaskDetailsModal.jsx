@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Pause, CheckCircle2, RotateCcw } from 'lucide-react';
 import { Badge } from './ui/Badge';
 
-export default function TaskDetailsModal({ isOpen, task, onClose, onComplete }) {
+export default function TaskDetailsModal({ isOpen, task, onClose, onComplete, onRevert }) {
+  const [duration, setDuration] = useState(25); // 25 or 45
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
 
@@ -22,15 +23,15 @@ export default function TaskDetailsModal({ isOpen, task, onClose, onComplete }) 
 
   useEffect(() => {
     if (isOpen) {
-      setTimeLeft(25 * 60);
+      setTimeLeft(duration * 60);
       setIsActive(false);
     }
-  }, [isOpen, task?.id]);
+  }, [isOpen, task?.id, duration]);
 
   if (!task) return null;
 
   const toggleTimer = () => setIsActive(!isActive);
-  const resetTimer = () => { setIsActive(false); setTimeLeft(25 * 60); };
+  const resetTimer = () => { setIsActive(false); setTimeLeft(duration * 60); };
   
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -72,6 +73,21 @@ export default function TaskDetailsModal({ isOpen, task, onClose, onComplete }) 
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 32, background: 'rgba(255,255,255,0.03)', borderRadius: 16, marginBottom: 24 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <button 
+                  onClick={() => { setDuration(25); setTimeLeft(25*60); setIsActive(false); }}
+                  style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', background: duration === 25 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)', color: 'white' }}
+                >
+                  25 min
+                </button>
+                <button 
+                  onClick={() => { setDuration(45); setTimeLeft(45*60); setIsActive(false); }}
+                  style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', background: duration === 45 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)', color: 'white' }}
+                >
+                  45 min
+                </button>
+              </div>
+
               <div style={{ fontSize: 64, fontWeight: 700, fontFamily: 'monospace', letterSpacing: '-0.05em', color: isActive ? 'var(--accent-ai)' : 'white' }}>
                 {formatTime(timeLeft)}
               </div>
@@ -86,12 +102,22 @@ export default function TaskDetailsModal({ isOpen, task, onClose, onComplete }) 
               </div>
             </div>
 
-            <button 
-              onClick={() => onComplete(task.id)}
-              style={{ width: '100%', padding: 16, borderRadius: 12, background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: 600, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer' }}
-            >
-              <CheckCircle2 size={20} /> Mark Task Complete
-            </button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {onRevert && (
+                <button 
+                  onClick={() => onRevert(task.id)}
+                  style={{ flex: 1, padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: 600, fontSize: 14, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                >
+                  Revert to Pending
+                </button>
+              )}
+              <button 
+                onClick={() => onComplete(task.id)}
+                style={{ flex: 2, padding: 16, borderRadius: 12, background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer' }}
+              >
+                <CheckCircle2 size={20} /> Mark Complete
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
