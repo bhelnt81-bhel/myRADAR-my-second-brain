@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Zap, ArrowRight, TrendingUp, AlertTriangle, Brain, RefreshCw } from 'lucide-react';
+import { Clock, Zap, TrendingUp, AlertTriangle, Brain, RefreshCw } from 'lucide-react';
+import { GlassCard } from './ui/GlassCard';
+import { Badge } from './ui/Badge';
 
 const TaskItem = ({ task, index }) => (
   <motion.div 
@@ -13,25 +15,21 @@ const TaskItem = ({ task, index }) => (
     <div style={{ width: 4, height: 48, background: task.domainColor, borderRadius: 2 }} />
     <div style={{ flex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-        <span className="domain-pill" style={{ color: task.domainColor, background: `${task.domainColor}20`, padding: '2px 8px', fontSize: 10 }}>
-          {task.domain}
+        <Badge color={task.domainColor}>{task.domain}</Badge>
+        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Clock size={11} aria-hidden="true" /> <span className="sr-only">Time limit:</span> {task.time}
         </span>
         <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Clock size={11} /> {task.time}
-        </span>
-        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Zap size={11} /> {task.energy}
+          <Zap size={11} aria-hidden="true" /> <span className="sr-only">Energy:</span> {task.energy}
         </span>
         {task.priorityScore !== undefined && (
-          <span style={{ fontSize: 10, background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', padding: '2px 6px', borderRadius: 10, color: 'white', fontWeight: 700 }}>
-            Score: {task.priorityScore}
-          </span>
+          <Badge type="score">Score: {task.priorityScore}</Badge>
         )}
       </div>
       <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{task.title}</h3>
       {task.microAction && (
         <div style={{ fontSize: 11, color: '#f0883e', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span>⚡ First Step:</span> {task.microAction}
+          <span aria-hidden="true">⚡</span> <span className="sr-only">First Step:</span> {task.microAction}
         </div>
       )}
     </div>
@@ -41,7 +39,6 @@ const TaskItem = ({ task, index }) => (
 export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, onCheckIn, onRecalculate }) {
   const pendingTasks = tasks.filter(t => t.status !== 'completed');
 
-  // Loading State
   if (isPrioritizing) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
@@ -56,14 +53,12 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
     );
   }
 
-  // Check-In UI
   if (!energyLevel) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
-        <motion.div 
+        <GlassCard 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-panel" 
           style={{ padding: 40, maxWidth: 500, width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 24 }}
         >
           <div>
@@ -84,6 +79,7 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
                 key={level.id}
                 onClick={() => onCheckIn(level.id)}
                 className="glass-button"
+                aria-label={`Select ${level.id} energy level`}
                 style={{
                   padding: '16px 20px', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
                   border: `1px solid rgba(255,255,255,0.08)`, textTransform: 'none', textAlign: 'left', width: '100%'
@@ -94,18 +90,16 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
               </button>
             ))}
           </div>
-        </motion.div>
+        </GlassCard>
       </div>
     );
   }
 
-  // Prioritized Tasks Mapping
   const mappedTopTasks = (top3Ids || []).map(id => pendingTasks.find(t => t.id === id)).filter(Boolean);
   const displayTopTasks = mappedTopTasks.length > 0 
     ? mappedTopTasks 
-    : [...pendingTasks].sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0)).slice(0, 3);
+    : [...pendingTasks].sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0)).slice(0, 5);
 
-  // Eisenhower Matrix grouping
   const getQ = (t, qVal) => t.quadrant === qVal || (!t.quadrant && qVal === 'Q1 — DO NOW' && t.urgency === 'High' && (t.importance === 'High' || !t.importance));
   const getQ2 = (t) => t.quadrant === 'Q2 — SCHEDULE' || (!t.quadrant && t.urgency !== 'High' && (t.importance === 'High' || !t.importance));
   const getQ3 = (t) => t.quadrant === 'Q3 — DELEGATE' || (!t.quadrant && t.urgency === 'High' && t.importance === 'Low');
@@ -125,10 +119,10 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
 
   return (
     <div className="page-container">
-      <div className="dashboard-header">
+      <header className="dashboard-header">
         <div>
           <h1 className="dashboard-title">
-            Good Morning, Santosh <span className="emoji-large">🌅</span>
+            Good Morning, Santosh <span className="emoji-large" aria-hidden="true">🌅</span>
           </h1>
           <p className="dashboard-subtitle">
             AI-curated Daily Briefing • <strong>{energyLevel} Energy Mode</strong>
@@ -138,12 +132,13 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
           <button 
             onClick={onRecalculate}
             className="glass-button"
+            aria-label="Recalculate AI Priorities"
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}
           >
-            <RefreshCw size={14} /> Recalculate AI
+            <RefreshCw size={14} aria-hidden="true" /> Recalculate AI
           </button>
           
-          <div className="glass-panel stats-panel">
+          <div className="glass-panel stats-panel" role="status" aria-label="Task Status">
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent-bhel)' }}>{q1.length}</div>
               <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Urgent</div>
@@ -155,14 +150,13 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="dashboard-grid">
-        {/* Left Column: Top Tasks */}
-        <div>
+        <section aria-labelledby="top-actions-title">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <Zap color="var(--accent-intimus)" size={20} />
-            <h2 style={{ fontSize: 18, fontWeight: 600 }}>Top Recommended Actions</h2>
+            <Zap color="var(--accent-intimus)" size={20} aria-hidden="true" />
+            <h2 id="top-actions-title" style={{ fontSize: 18, fontWeight: 600 }}>Top Recommended Actions</h2>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -176,18 +170,17 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 40, marginBottom: 20 }}>
-            <TrendingUp color="var(--accent-ai)" size={20} />
+            <TrendingUp color="var(--accent-ai)" size={20} aria-hidden="true" />
             <h2 style={{ fontSize: 18, fontWeight: 600 }}>AI Priority Matrix</h2>
           </div>
 
           <div className="matrix-grid">
             {quadrants.map((q, i) => (
-              <motion.div 
+              <GlassCard 
                 key={i}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 + (i * 0.1) }}
-                className="glass-panel" 
                 style={{ borderTop: `3px solid ${q.border}`, padding: 20, background: q.bg }}
               >
                 <div style={{ fontSize: 10, fontWeight: 600, color: q.border, textTransform: 'uppercase', marginBottom: 4 }}>{q.label}</div>
@@ -195,16 +188,15 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
                 <ul style={{ paddingLeft: 16, margin: 0, color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.6 }}>
                   {q.tasks.map((t, j) => <li key={j} style={{ marginBottom: 4 }}>{t}</li>)}
                 </ul>
-              </motion.div>
+              </GlassCard>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Right Column: AI Insights */}
-        <div>
-          <div className="glass-panel" style={{ padding: 24, background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+        <aside aria-label="AI Insights and Alerts">
+          <GlassCard style={{ padding: 24, background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <Brain color="var(--accent-ai)" size={24} />
+              <Brain color="var(--accent-ai)" size={24} aria-hidden="true" />
               <h3 style={{ fontSize: 15, margin: 0 }}>Brain Insight</h3>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
@@ -214,11 +206,11 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
               <span style={{ fontSize: 10, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: 12 }}>Context Switching</span>
               <span style={{ fontSize: 10, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: 12 }}>{energyLevel} Energy</span>
             </div>
-          </div>
+          </GlassCard>
 
-          <div className="glass-panel" style={{ padding: 24, marginTop: 20 }}>
+          <GlassCard style={{ padding: 24, marginTop: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <AlertTriangle color="var(--accent-bhel)" size={20} />
+              <AlertTriangle color="var(--accent-bhel)" size={20} aria-hidden="true" />
               <h3 style={{ fontSize: 15, margin: 0 }}>Radar Alerts</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -233,10 +225,9 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
                 <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>No high urgency radar alerts pending.</div>
               )}
             </div>
-          </div>
-        </div>
+          </GlassCard>
+        </aside>
       </div>
     </div>
   );
 }
-
