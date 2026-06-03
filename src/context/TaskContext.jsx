@@ -168,6 +168,12 @@ export const TaskProvider = ({ children }) => {
     runAIPrioritization(tasks, energyLevel);
   };
 
+  const handleResetEnergy = () => {
+    setEnergyLevel(null);
+    localStorage.removeItem('myradar_last_checkin_date');
+    localStorage.removeItem('myradar_energy_level');
+  };
+
   const value = {
     tasks,
     energyLevel,
@@ -178,7 +184,8 @@ export const TaskProvider = ({ children }) => {
     handleCheckIn,
     handleAddTask,
     handleUpdateTasks,
-    forceRecalculate
+    forceRecalculate,
+    handleResetEnergy
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

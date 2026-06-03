@@ -49,7 +49,7 @@ const PageWrapper = ({ children }) => (
 );
 
 const DashboardWrapper = () => {
-  const { tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, handleCheckIn, forceRecalculate, loading } = useTasksContext();
+  const { tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, handleCheckIn, forceRecalculate, handleResetEnergy, loading } = useTasksContext();
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -61,6 +61,7 @@ const DashboardWrapper = () => {
     <Dashboard 
       tasks={tasks} energyLevel={energyLevel} aiInsight={aiInsight} top3Ids={top3Ids}
       isPrioritizing={isPrioritizing} onCheckIn={handleCheckIn} onRecalculate={forceRecalculate}
+      onResetEnergy={handleResetEnergy}
     />
   );
 };

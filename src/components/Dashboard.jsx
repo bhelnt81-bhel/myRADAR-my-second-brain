@@ -54,7 +54,7 @@ const TaskItem = ({ task, index, onStart }) => (
   </motion.div>
 );
 
-export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, onCheckIn, onRecalculate }) {
+export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPrioritizing, onCheckIn, onRecalculate, onResetEnergy }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const { handleUpdateTasks } = useTasksContext();
   
@@ -174,6 +174,14 @@ export default function Dashboard({ tasks, energyLevel, aiInsight, top3Ids, isPr
           </p>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button 
+            onClick={onResetEnergy}
+            className="glass-button"
+            aria-label="Change Energy Level"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}
+          >
+            <Zap size={14} aria-hidden="true" /> Change Energy
+          </button>
           <button 
             onClick={onRecalculate}
             className="glass-button"
