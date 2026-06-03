@@ -174,6 +174,11 @@ export const TaskProvider = ({ children }) => {
     localStorage.removeItem('myradar_energy_level');
   };
 
+  const handleUpdateTaskData = async (taskId, updates) => {
+    const updatedTasks = await db.updateTask(taskId, updates);
+    handleUpdateTasks(updatedTasks);
+  };
+
   const value = {
     tasks,
     energyLevel,
@@ -184,6 +189,7 @@ export const TaskProvider = ({ children }) => {
     handleCheckIn,
     handleAddTask,
     handleUpdateTasks,
+    handleUpdateTaskData,
     forceRecalculate,
     handleResetEnergy
   };

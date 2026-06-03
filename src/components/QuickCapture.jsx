@@ -197,10 +197,12 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
       setIsScanning(true);
       try {
         const dataUrl = event.target.result;
+        // dataUrl format is "data:image/png;base64,....."
+        const mimeType = dataUrl.substring(dataUrl.indexOf(':') + 1, dataUrl.indexOf(';'));
         const base64Data = dataUrl.split(',')[1];
         
         if (ai.hasKey()) {
-          const result = await ai.scanTaskFromImage(base64Data);
+          const result = await ai.scanTaskFromImage(base64Data, mimeType);
           if (result && result.tasks && result.tasks.length > 0) {
             setDetectedTasks(result.tasks.map((t, idx) => ({ ...t, selected: true, id: `temp-file-${idx}` })));
           }
@@ -390,6 +392,7 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
                               <option value="30m">30m</option>
                               <option value="45m">45m</option>
                               <option value="60m">60m</option>
+                              <option value=">1h">&gt; 1h</option>
                             </select>
                           </div>
                         </div>
@@ -511,6 +514,7 @@ export default function QuickCapture({ isOpen, onClose, onAdd }) {
                         <option value="30m">30 mins</option>
                         <option value="45m">45 mins</option>
                         <option value="60m">60 mins</option>
+                        <option value=">1h">&gt; 1 Hour</option>
                       </select>
                     </div>
                   </div>

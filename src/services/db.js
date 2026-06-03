@@ -133,6 +133,19 @@ export const db = {
     }
 
     return updatedTasks;
+  },
+
+  updateTask: async (taskId, updates) => {
+    const stored = localStorage.getItem(DB_KEY);
+    const tasks = stored ? JSON.parse(stored) : [];
+    const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
+    localStorage.setItem(DB_KEY, JSON.stringify(updatedTasks));
+
+    // Note: To keep the backend in sync for arbitrary updates, we'd ideally have an updateTask action in Google Sheets.
+    // For now, we update it locally. If it's just a status change, it syncs.
+    // If it's subtasks, it lives in local storage unless we add full syncing.
+    
+    return updatedTasks;
   }
 };
 

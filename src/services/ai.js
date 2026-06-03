@@ -232,7 +232,7 @@ Provide a concise, encouraging, and highly specific answer (2-4 sentences max). 
     }
   },
 
-  scanTaskFromImage: async (base64Image) => {
+  scanTaskFromImage: async (base64Image, mimeType = "image/jpeg") => {
     const apiKey = getApiKey();
     if (!apiKey) {
       throw new Error("Gemini API key is not configured.");
@@ -246,7 +246,7 @@ Extract the task details and return them as a JSON array of objects. Each object
 - urgency: One of ['High', 'Medium', 'Low'] based on dates or tone.
 - importance: One of ['High', 'Medium', 'Low'].
 - energy: One of ['High', 'Medium', 'Low'] representing cognitive cost.
-- time: A time estimate (e.g. '30m', '45m', '1h', '2h').
+- time: A time estimate (e.g. '30m', '45m', '1h', '>1h').
 
 Return ONLY this JSON object containing the 'tasks' array. Do not include markdown code block formatting or backticks.`;
 
@@ -256,7 +256,7 @@ Return ONLY this JSON object containing the 'tasks' array. Do not include markdo
           { text: prompt },
           {
             inlineData: {
-              mimeType: "image/jpeg",
+              mimeType: mimeType,
               data: base64Image
             }
           }
@@ -301,5 +301,48 @@ Return ONLY this JSON object containing the 'tasks' array. Do not include markdo
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     return JSON.parse(text);
+  },
+
+  breakdownTask: async (task) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured.");
+    }
+
+    const prompt = `You are a productivity expert. Break down the following task into 3-5 small, actionable subtasks.
+Task Title: "${task.title}"
+Domain: ${task.domain}
+Return ONLY a JSON array of objects. Each object must have a single property "title" (a short string). Do not include any other markdown formatting or backticks. Example: [{"title": "Step 1"}, {"title": "Step 2"}]`;
+
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" }
+            },
+            required: ["title"]
+          }
+        }
+      }
+    };
+
+    const response = await fetch(`${getApiEndpoint()}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      throw new Error("Gemini API request failed to breakdown task.");
+    }
+
+    const data = await response.json();
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return JSON.parse(rawText);
   }
 };
