@@ -40,13 +40,16 @@ export const TaskProvider = ({ children }) => {
       });
 
       setTasks(fallbackPrioritized);
-      setAiInsight("Welcome back, Santosh! Please enter your Gemini API Key in Settings to unlock real-time contextual priorities, proactive daily briefings, and procrastination micro-actions.");
+      const fallbackInsight = "Welcome back! Please enter your Gemini API Key in Settings to unlock real-time contextual priorities, proactive daily briefings, and procrastination micro-actions.";
+      setAiInsight(fallbackInsight);
       const sortedIds = [...fallbackPrioritized]
         .filter(t => t.status !== 'completed')
         .sort((a,b) => b.priorityScore - a.priorityScore)
         .slice(0, 5)
         .map(t => t.id);
       setTop3Ids(sortedIds);
+      
+      db.syncPriorities(fallbackPrioritized, fallbackInsight, sortedIds, energy);
       return;
     }
 
@@ -74,11 +77,7 @@ export const TaskProvider = ({ children }) => {
         setAiInsight(result.insight || '');
         setTop3Ids(result.top3Ids || []);
 
-        localStorage.setItem('myradar_prioritized_state', JSON.stringify({
-          tasks: updated,
-          insight: result.insight,
-          top3Ids: result.top3Ids
-        }));
+        db.syncPriorities(updated, result.insight || '', result.top3Ids || [], energy);
       }
     } catch (e) {
       console.error("AI Prioritization failed", e);
@@ -97,40 +96,33 @@ export const TaskProvider = ({ children }) => {
   useEffect(() => {
     const lastCheckin = localStorage.getItem('myradar_last_checkin_date');
     const today = new Date().toDateString();
-    const savedEnergy = localStorage.getItem('myradar_energy_level');
-    
     let currentEnergy = null;
-    if (lastCheckin === today && savedEnergy) {
-      currentEnergy = savedEnergy;
-      setEnergyLevel(savedEnergy);
-    }
 
     db.getTasks().then(data => {
-      const cachedState = localStorage.getItem('myradar_prioritized_state');
-      if (cachedState) {
-        try {
-          const parsed = JSON.parse(cachedState);
-          const syncedTasks = data.map(dbTask => {
-            const cachedTask = parsed.tasks.find(t => t.id === dbTask.id);
-            if (cachedTask) {
-              return { ...cachedTask, status: dbTask.status };
-            }
-            return dbTask;
-          });
-          setTasks(syncedTasks);
-          setAiInsight(parsed.insight || '');
-          setTop3Ids(parsed.top3Ids || []);
-          setLoading(false);
-          return;
-        } catch (e) {
-          console.error("Failed parsing cached AI priorities", e);
+      const fetchedTasks = data.tasks || [];
+      const fetchedMeta = data.metadata || {};
+      
+      setTasks(fetchedTasks);
+      
+      if (fetchedMeta.aiInsight) setAiInsight(fetchedMeta.aiInsight);
+      if (fetchedMeta.top3Ids) setTop3Ids(fetchedMeta.top3Ids);
+      
+      // If today is the same day as the last checkin from Metadata or LocalStorage, restore energy
+      const savedEnergy = localStorage.getItem('myradar_energy_level') || fetchedMeta.energyLevel;
+      if (lastCheckin === today && savedEnergy) {
+        currentEnergy = savedEnergy;
+        setEnergyLevel(savedEnergy);
+        if (!localStorage.getItem('myradar_energy_level')) {
+          localStorage.setItem('myradar_energy_level', savedEnergy);
+          localStorage.setItem('myradar_last_checkin_date', today);
         }
       }
 
-      setTasks(data);
       setLoading(false);
-      if (currentEnergy) {
-        runAIPrioritization(data, currentEnergy);
+      
+      // Only run auto-prioritization if we have an energy level but the cloud didn't have an AI Insight yet
+      if (currentEnergy && !fetchedMeta.aiInsight) {
+        runAIPrioritization(fetchedTasks, currentEnergy);
       }
     });
   }, [runAIPrioritization]);
@@ -146,22 +138,6 @@ export const TaskProvider = ({ children }) => {
 
   const handleUpdateTasks = (updatedTasks) => {
     setTasks(updatedTasks);
-    const cachedState = localStorage.getItem('myradar_prioritized_state');
-    if (cachedState) {
-      try {
-        const parsed = JSON.parse(cachedState);
-        parsed.tasks = parsed.tasks.map(cachedTask => {
-          const matchingDbTask = updatedTasks.find(t => t.id === cachedTask.id);
-          if (matchingDbTask) {
-            return { ...cachedTask, status: matchingDbTask.status };
-          }
-          return cachedTask;
-        });
-        localStorage.setItem('myradar_prioritized_state', JSON.stringify(parsed));
-      } catch (e) {
-        console.error(e);
-      }
-    }
   };
 
   const forceRecalculate = () => {

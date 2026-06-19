@@ -1,5 +1,6 @@
 // Database service supporting Phase 1 LocalStorage persistence and Google Sheets synchronization.
 const DB_KEY = 'myradar_tasks';
+const META_KEY = 'myradar_metadata';
 
 const initialTasks = [
   { id: 1, title: 'Draft Disposal Note for 56 ACs', domain: 'BHEL', domainColor: 'var(--accent-bhel)', urgency: 'High', importance: 'High', energy: 'High', time: '45m', status: 'pending', deadlineDays: 2 },
@@ -34,31 +35,37 @@ function getSheetUrl() {
 
 export const db = {
   getTasks: async () => {
-    // Return a promise with a slight timeout to simulate network delay for local,
-    // or run direct fetch if sheetUrl is configured.
-    const localData = localStorage.getItem(DB_KEY);
-    const tasks = localData ? JSON.parse(localData) : initialTasks;
-    if (!localData) {
-      localStorage.setItem(DB_KEY, JSON.stringify(initialTasks));
-    }
+    let localTasks = initialTasks;
+    let localMeta = { aiInsight: '', top3Ids: [], energyLevel: null };
+    
+    try {
+      const storedTasks = localStorage.getItem(DB_KEY);
+      if (storedTasks) localTasks = JSON.parse(storedTasks);
+      else localStorage.setItem(DB_KEY, JSON.stringify(initialTasks));
+      
+      const storedMeta = localStorage.getItem(META_KEY);
+      if (storedMeta) localMeta = JSON.parse(storedMeta);
+    } catch(e) {}
 
     const sheetUrl = getSheetUrl();
     if (sheetUrl) {
       try {
-        // Use cache: 'no-store' and a cache-busting query parameter to prevent browser caching
         const urlWithCacheBuster = sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
         const response = await fetch(urlWithCacheBuster, { cache: 'no-store' });
         if (response.ok) {
-          const remoteTasks = await response.json();
-          if (Array.isArray(remoteTasks)) {
-            // Apply domain colors
-            const formattedTasks = remoteTasks.map(t => ({
-              ...t,
-              domainColor: domainColors[t.domain] || '#94a3b8'
-            }));
-            localStorage.setItem(DB_KEY, JSON.stringify(formattedTasks));
-            return formattedTasks;
-          }
+          const remoteData = await response.json();
+          let remoteTasks = Array.isArray(remoteData) ? remoteData : (remoteData.tasks || []);
+          let metadata = Array.isArray(remoteData) ? { aiInsight: '', top3Ids: [], energyLevel: null } : (remoteData.metadata || {});
+
+          const formattedTasks = remoteTasks.map(t => ({
+            ...t,
+            domainColor: domainColors[t.domain] || '#94a3b8'
+          }));
+          
+          localStorage.setItem(DB_KEY, JSON.stringify(formattedTasks));
+          localStorage.setItem(META_KEY, JSON.stringify(metadata));
+          
+          return { tasks: formattedTasks, metadata };
         }
       } catch (err) {
         console.warn("Failed to fetch from Google Sheets, using cached tasks", err);
@@ -66,7 +73,7 @@ export const db = {
     }
 
     return new Promise((resolve) => {
-      setTimeout(() => resolve(tasks), 100);
+      setTimeout(() => resolve({ tasks: localTasks, metadata: localMeta }), 100);
     });
   },
 
@@ -88,17 +95,9 @@ export const db = {
     const sheetUrl = getSheetUrl();
     if (sheetUrl) {
       try {
-        // Send as text/plain to avoid CORS preflight OPTIONS pre-request
         await fetch(sheetUrl, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify({
-            action: 'addTask',
-            task: newTask
-          })
+          method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'addTask', task: newTask })
         });
       } catch (err) {
         console.warn("Failed to push new task to Google Sheets, saved locally", err);
@@ -118,19 +117,11 @@ export const db = {
     if (sheetUrl) {
       try {
         await fetch(sheetUrl, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify({
-            action: 'updateTaskStatus',
-            id: taskId,
-            status: status
-          })
+          method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'updateTaskStatus', id: taskId, status })
         });
       } catch (err) {
-        console.warn("Failed to update task status in Google Sheets, updated locally", err);
+        console.warn("Failed to update task status in Google Sheets", err);
       }
     }
 
@@ -143,11 +134,38 @@ export const db = {
     const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
     localStorage.setItem(DB_KEY, JSON.stringify(updatedTasks));
 
-    // Note: To keep the backend in sync for arbitrary updates, we'd ideally have an updateTask action in Google Sheets.
-    // For now, we update it locally. If it's just a status change, it syncs.
-    // If it's subtasks, it lives in local storage unless we add full syncing.
+    const sheetUrl = getSheetUrl();
+    if (sheetUrl) {
+      try {
+        await fetch(sheetUrl, {
+          method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'updateTask', id: taskId, updates })
+        });
+      } catch (err) {
+        console.warn("Failed to update task in Google Sheets", err);
+      }
+    }
     
     return updatedTasks;
+  },
+  
+  syncPriorities: async (tasks, insight, top3Ids, energyLevel) => {
+    const sheetUrl = getSheetUrl();
+    if (!sheetUrl) return false;
+    
+    // Save metadata locally just in case
+    const currentMeta = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    localStorage.setItem(META_KEY, JSON.stringify({ ...currentMeta, aiInsight: insight, top3Ids, energyLevel }));
+    
+    try {
+      await fetch(sheetUrl, {
+        method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'syncPriorities', tasks, insight, top3Ids, energyLevel })
+      });
+      return true;
+    } catch (err) {
+      console.warn("Failed to sync AI priorities to Google Sheets", err);
+      return false;
+    }
   }
 };
-
