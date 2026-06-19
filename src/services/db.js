@@ -45,7 +45,9 @@ export const db = {
     const sheetUrl = getSheetUrl();
     if (sheetUrl) {
       try {
-        const response = await fetch(sheetUrl);
+        // Use cache: 'no-store' and a cache-busting query parameter to prevent browser caching
+        const urlWithCacheBuster = sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+        const response = await fetch(urlWithCacheBuster, { cache: 'no-store' });
         if (response.ok) {
           const remoteTasks = await response.json();
           if (Array.isArray(remoteTasks)) {
